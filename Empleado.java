@@ -3,8 +3,8 @@ public class Empleado extends Persona {
     private String turno;
 
     // Constructor
-    public Empleado(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, String turno) {
-        super(nombre, apellidoP, apellidoM, edad, numeroCelular);
+    public Empleado(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta, String turno) {
+        super(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta);
         this.turno = turno;
     }
 
@@ -15,4 +15,5 @@ public class Empleado extends Persona {
     public void setTurno(String turno) {
         this.turno = turno;
     }   
+
 }
