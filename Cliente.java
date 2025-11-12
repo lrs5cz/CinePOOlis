@@ -8,36 +8,22 @@ public class Cliente extends Persona {
 
     // Atributos
     private Cuenta cuenta;
+    private String tarjetaBancaria;
+
 
     // Constructor
-    public Cliente(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta) {
+    public Cliente(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta, String tarjetaBancaria) {
         super(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta);
-        this.cuenta = cuenta;
+        this.tarjetaBancaria = tarjetaBancaria;
     }
 
-    // Getter y Setter para la cuenta de la persona
-    public String getNicknameCuenta() {
-        return cuenta.getNickname();
+    // Getters y Setters
+    public String getTarjetaBancaria() {
+        return tarjetaBancaria;
     }
 
-    public void setNicknameCuenta(String nickname) {
-        cuenta.setNickname(nickname);
-    }
-
-    public String getPasswordCuenta() {
-        return cuenta.getPassword();
-    }
-
-    public void setPasswordCuenta(String password) {
-        cuenta.setPassword(password);
-    }
-
-    public String getCorreoCuenta() {
-        return cuenta.getCorreo();
-    }
-
-    public void setCorreoCuenta(String correo) {
-        cuenta.setCorreo(correo);
+    public void setTarjetaBancaria(String tarjetaBancaria) {
+        this.tarjetaBancaria = tarjetaBancaria;
     }
 
     // Métodos
