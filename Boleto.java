@@ -3,8 +3,8 @@ public class Boleto extends Funcion {
     private String asiento;
 
     // Constructor
-    public Boleto(String pelicula, String horario, String sala, String asiento) {
-        super(pelicula, horario, sala);
+    public Boleto(String pelicula,String fecha, String horario, String sala, String asiento) {
+        super(pelicula,fecha, horario, sala);
         this.asiento = asiento;
     }
 
