@@ -2,9 +2,10 @@ public abstract class Persona {
     // Atributos
     private String nombre, apellidoP, apellidoM, numeroCelular;
     private int edad;
+    private Cuenta cuenta;
 
     // Constructor
-    public Persona(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular) {
+    public Persona(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta) {
         this.nombre = nombre;
         this.apellidoP = apellidoP;
         this.apellidoM = apellidoM;
@@ -51,5 +52,30 @@ public abstract class Persona {
 
     public void setNumeroCelular(String numeroCelular) {
         this.numeroCelular = numeroCelular;
+    }
+
+    // Getter y Setter para la cuenta de la persona
+    public String getNicknameCuenta() {
+        return cuenta.getNickname();
+    }
+
+    public void setNicknameCuenta(String nickname) {
+        cuenta.setNickname(nickname);
+    }
+
+    public String getPasswordCuenta() {
+        return cuenta.getPassword();
+    }
+
+    public void setPasswordCuenta(String password) {
+        cuenta.setPassword(password);
+    }
+
+    public String getCorreoCuenta() {
+        return cuenta.getCorreo();
+    }
+
+    public void setCorreoCuenta(String correo) {
+        cuenta.setCorreo(correo);
     }
 }
