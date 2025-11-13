@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.*;
 
 public class Cliente extends Persona {
@@ -32,6 +35,322 @@ public class Cliente extends Persona {
     public void menuCliente () {
 
     }
+
+    // Método para mostrar la cartelera de películas
+    public static void verCartelera (List<Pelicula> cartelera) { // La lista de películas son solo las que están en cartelera
+        StringBuilder carteleraStr = new StringBuilder("Cartelera de Películas:\n\n");
+        try {
+            if (cartelera.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "No hay películas en la cartelera en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            } else {
+                for (Pelicula pelicula : cartelera) {
+                carteleraStr.append("Nombre: ").append(pelicula.getNombrePelicula()).append("\n")
+                            .append("Género: ").append(pelicula.getGeneroPelicula()).append("\n")
+                            .append("Sinopsis: ").append(pelicula.getSinopsis()).append("\n")
+                            .append("Duración: ").append(pelicula.getDuracion()).append("\n\n");
+                }
+
+                // Creamos un JScrollPane para mostrar la cartelera en un área de texto desplazable
+                JScrollPane scrollPane = new JScrollPane(new JTextArea(carteleraStr.toString())); // Área de texto dentro del JScrollPane
+                scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+
+                JOptionPane.showMessageDialog(null, scrollPane, "Cartelera", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al mostrar la cartelera: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Método para comprar boletos
+    public List<String> comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos) {
+        Funcion funcionSeleccionada = seleccionarFuncion(funciones);
+        
+        if (funcionSeleccionada == null) {
+            return new ArrayList<>();
+        }
+        
+        List<String> boletos = seleccionarAsiento(asientos, funcionSeleccionada);
+        
+        return boletos; 
+    }
+
+    // Método auxiliar para seleccionar función
+    private Funcion seleccionarFuncion(List<Funcion> funciones) {
+        int i = 1;
+        StringBuilder funcionesStr = new StringBuilder("Cartelera de Películas:\n\n");
+        try {
+            if (funciones.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "No hay funciones programadas en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
+                return null;
+            } else {
+                for (Funcion f : funciones) {
+                funcionesStr.append(i).append(". ").append("ID película: ").append(f.getIDPelicula()).append("\n")
+                            .append("Fecha: ").append(f.getFecha()).append("\n")
+                            .append("Hora: ").append(f.getHora()).append("\n")
+                            .append("Sala: ").append(f.getSala()).append("\n\n");
+                            i++;
+                }
+
+                // Creamos un JScrollPane para mostrar las funciones seleccionables
+                JScrollPane scrollPane = new JScrollPane(new JTextArea(funciones.toString())); // Área de texto dentro del JScrollPane
+                scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+
+                JOptionPane.showMessageDialog(null, scrollPane, "Funciones", JOptionPane.INFORMATION_MESSAGE);
+                String idSeleccionado = JOptionPane.showInputDialog(null, "Ingresa el ID de la película para seleccionar la función:", "Seleccionar Película", JOptionPane.QUESTION_MESSAGE);
+                for (Funcion f : funciones) {
+                    if (f.getIDPelicula().toLowerCase().equals(idSeleccionado.toLowerCase())) {
+                        int funcionSeleccionada = Integer.parseInt(JOptionPane.showInputDialog(null,
+                        "Ingrese el N° de función que desea seleccionar:\n" + funcionesStr.toString(), 
+                        "Seleccionar Función", 
+                        JOptionPane.QUESTION_MESSAGE)) - 1; // Restamos 1 porque el índice es un número menos al mostrado para el usuario.
+                        return funciones.get(funcionSeleccionada);
+                    }
+                }
+            }
+        } catch (NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al mostrar la cartelera: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Método auxiliar para seleccionar asiento
+    public List<String> seleccionarAsiento(String[][] asientos, Funcion funcion) {
+        // Mostrar el mapa de asientos
+        verAsientos(asientos, funcion);
+        
+        int asientosASeleccionar = 0;
+        boolean cantidadValida = false;
+        
+        // Bucle para validar la cantidad de asientos a reservar (máx 10)
+        do {
+            String inputCantidad = JOptionPane.showInputDialog(
+                null, 
+                "Ingresa el número de asientos que deseas reservar (máximo 10):",
+                "Seleccionar Asientos", 
+                JOptionPane.QUESTION_MESSAGE
+            );
+            
+            // Manejar cancelación
+            if (inputCantidad == null) {
+                return null; // El usuario canceló la selección
+            }
+
+            try {
+                asientosASeleccionar = Integer.parseInt(inputCantidad.trim());
+                
+                // Validar el rango
+                if (asientosASeleccionar <= 0 || asientosASeleccionar > 10) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        "Selección fuera de rango. Elige entre 1 y 10 asientos.",
+                        "Error de Rango", 
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                } else {
+                    cantidadValida = true; // La cantidad es válida
+                }
+            } catch (NumberFormatException nfe) {
+                JOptionPane.showMessageDialog(
+                    null, 
+                    "Entrada inválida. Por favor, ingresa un número entero.", 
+                    "Error de Formato", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        } while (!cantidadValida);
+
+        // Bucle para seleccionar cada asiento individualmente
+        String ultimoAsientoReservado = null; 
+        List<String> boletosComprados = new ArrayList<>(); 
+        for (int i = 0; i < asientosASeleccionar; i++) {
+            boolean asientoReservado = false;
+            
+            // Bucle interno para forzar la selección correcta de CADA asiento
+            do {
+                String asientoSeleccionado = JOptionPane.showInputDialog(
+                    null, 
+                    "Asiento " + (i + 1) + " de " + asientosASeleccionar + 
+                    "\nIngresa el asiento a reservar (ejemplo: A1, B10):",
+                    "Seleccionar Asiento",
+                    JOptionPane.QUESTION_MESSAGE
+                );
+
+                if (asientoSeleccionado == null) {
+                    // Si cancela a mitad de selección, detenemos el proceso
+                    JOptionPane.showMessageDialog(null, "Proceso de reserva cancelado.", "Cancelado", JOptionPane.WARNING_MESSAGE);
+                    return null;
+                }
+                
+                asientoSeleccionado = asientoSeleccionado.trim().toUpperCase();
+
+                // Validación de formato básico (mínimo 2 caracteres)
+                JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1.", "Error", JOptionPane.ERROR_MESSAGE);
+                if (asientoSeleccionado.length() > 3) {
+                    continue; // Repite el bucle 'do-while'
+                }
+
+                try {
+                    String letraStr, numeroStr;
+                    // Parseo de la letra y el número
+                    if (asientoSeleccionado.length() < 3) {
+                        throw new IllegalArgumentException("Formato inválido. Ejemplo: A1, B10.");
+                    } else if (asientoSeleccionado.length() == 2) {
+                        letraStr = asientoSeleccionado.substring(0, 1);
+                        numeroStr = asientoSeleccionado.substring(1, 2);
+                    } else { // longitud == 3
+                        letraStr = asientoSeleccionado.substring(0, 1);
+                        numeroStr = asientoSeleccionado.substring(1, 3);
+                    }
+                    
+
+                    int indiceFila = funcion.obtenerNumeroFila(letraStr); // Convertir letra a índice
+                    int indiceColumna = Integer.parseInt(numeroStr) - 1; // Columna base 1 a base 0
+
+                    // Validar que los índices estén dentro de los límites de la matriz
+                    if (indiceFila < 0 || indiceFila >= asientos.length ||
+                        indiceColumna < 0 || indiceColumna >= asientos[0].length) {
+                        
+                        throw new IndexOutOfBoundsException("Asiento fuera de los límites de la sala.");
+                    }
+                    
+                    String asientoActual = asientos[indiceFila][indiceColumna];
+
+                    if (asientoActual.endsWith("[O]")) {
+                        // Marcar asiento como reservado
+                        asientos[indiceFila][indiceColumna] = asientoActual.replace("[O]", "[X]");
+                        ultimoAsientoReservado = asientoSeleccionado; // Guardamos el último para devolver
+                        asientoReservado = true; // Salimos del bucle do-while
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "Asiento " + asientoSeleccionado + " reservado con éxito.",
+                            "Asiento Reservado", 
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
+                    } else if (asientoActual.endsWith("[X]")) {
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "El asiento " + asientoSeleccionado + " ya está reservado. Elige otro.",
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                    } else {
+                        // Captura asientos que son pasillos ("   ") o inválidos
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "El asiento " + asientoSeleccionado + " es inválido (posible pasillo).",
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        "Error: El número de columna es inválido.", 
+                        "Error de Formato", 
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                } catch (IndexOutOfBoundsException e) {
+                    // Captura si el asiento está fuera del rango de la matriz (ej: Z99)
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        "Asiento " + asientoSeleccionado + " no existe en esta sala. Revisa el mapa.", 
+                        "Error de Rango", 
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            } while (!asientoReservado);
+            Boleto boleto = new Boleto(funcion.getIdPelicula(), funcion.getFecha(), funcion.getHora(), funcion.getSala(), ultimoAsientoReservado);
+            boletosComprados.add(boleto.toString());
+        }
+    return boletosComprados; // Devuelve una lista con los boletos comprados
+}
+
+    // Método auxiliar para ver asientos según la sala
+    /*
+     * Formato de asientos según sala:
+     * Salas A:
+     *  1 2 3 ... 15
+     * A
+     * B
+     * c
+     * ...
+     * J
+     * 
+     * Sala B:
+     *  1 2 3 ... 15
+     * A
+     * B
+     * C
+     * ...
+     * J
+     * En la sala B no hay asientos 1-4 y 12-15 en las filas A-D
+     * 
+     * Sala VIP:
+     *  1 2 * * 3 4 * * 5 6
+     * A
+     * B
+     * C
+     * ...
+     * H
+     * Los asientos con * representan pasillos, no habrá asientos en esas posiciones
+     */ 
+    
+    public void verAsientos(String[][] asientos, Funcion funcion) {
+        String sala = funcion.getSala();
+        StringBuilder asientosStr = new StringBuilder();
+
+        switch (sala) {
+            case "Sala A":
+                asientosStr.append("Asientos Sala A.\n\n");
+                break;
+            case "Sala B":
+                asientosStr.append("Asientos Sala B.\n\n");
+                break;
+            case "Sala VIP":
+                asientosStr.append("Asientos Sala VIP.\n\n");
+                break;
+            default:
+                asientosStr.append("Asientos de Sala Desconocida.\n\n");
+                break;
+        }
+
+        // Si la matriz de asientos está vacía o es nula, no imprimimos nada
+        if (asientos == null || asientos.length == 0) {
+            asientosStr.append("No hay datos de asientos disponibles.");
+        } else {
+            // Asignamos un valor a las columnas
+            int numColumnas = asientos[0].length;
+            asientosStr.append("   "); // Espacio para la letra de fila
+            for (int j = 0; j < numColumnas; j++) {
+                // Formato de impresión estandarizada para las columnas
+                asientosStr.append(String.format(" %-3s", j + 1)); 
+            }
+            asientosStr.append("\n"); 
+
+            for (int i = 0; i < asientos.length; i++) {
+                // Añadir la letra de la fila 
+                String letraFila = funcion.obtenerLetraFila(i); 
+                asientosStr.append(letraFila).append(" ");
+                
+                for (String asiento : asientos[i]) {
+                    // Formato de impresión estandarizada para el asiento
+                    asientosStr.append(String.format(" %-3s", asiento));
+                }
+                asientosStr.append("\n"); 
+            }
+        }
+
+        JOptionPane.showMessageDialog(
+            null, 
+            asientosStr.toString(), 
+            "Asientos Disponibles", 
+            JOptionPane.PLAIN_MESSAGE
+        );
+    }
+
 
     // Método para comprar en la dulcería
     public static void comprarDulceria (Orden orden) {
@@ -146,5 +465,5 @@ public class Cliente extends Persona {
                 sabores,
                 sabores[0]);
         return sabores[saborSeleccionado];
-    }
+    }    
 }
