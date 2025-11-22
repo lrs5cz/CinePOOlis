@@ -11,6 +11,7 @@ public abstract class Persona {
         this.apellidoM = apellidoM;
         this.edad = edad;
         this.numeroCelular = numeroCelular;
+        this.cuenta = cuenta;
     }
 
     // Getters y Setters
@@ -79,3 +80,4 @@ public abstract class Persona {
         cuenta.setCorreo(correo);
     }
 }
+
