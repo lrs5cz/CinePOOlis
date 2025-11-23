@@ -32,7 +32,7 @@ public class Cliente extends Persona {
     // Métodos
 
     // Método para mostrar el menú del cliente
-    public void menuCliente () {
+    public static void menuCliente () {
 
     }
 
@@ -62,17 +62,63 @@ public class Cliente extends Persona {
         }
     }
 
-    // Método para comprar boletos
+    // Método para comprar boletos (Retorna la clave de los boletos)
     public List<String> comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos) {
-        Funcion funcionSeleccionada = seleccionarFuncion(funciones);
-        
-        if (funcionSeleccionada == null) {
-            return new ArrayList<>();
+        // Creamos una lista para las claves de los boletos
+        List<String> boletosClave = new List<String>();
+        do {
+            try {
+                // Seleccionamos la función
+                Funcion funcionSeleccionada = seleccionarFuncion(funciones);
+                if (funcionSeleccionada == null) break;
+                // Seleccionamos los asientos
+                List<Boleto> boletos = seleccionarAsiento(asientos, funcionSeleccionada);
+                // Añadimos las claves de los boletos
+                for (Boleto b : boletos) {
+                    boletosClave.add(b.toString());
+                }
+                // Obtenemos el precio total
+                int precioTotal = 0;
+                for (Boleto b : boletos) {
+                    precioTotal += b.getPrecio();
+                }
+                // Mostramos los boletos comprados
+                mostrarBoletosComprados(boletos, precioTotal);  
+                // Salimos del bucle
+                break;
+            } catch (Exception e) {
+                System.err.println("Error." + e.getMessage());
+            }
+        } while (true);
+        // Retornamos la lista con la clave de los boletos
+        return boletosClave;
+    }
+
+    // Método auxiliar para mostrar los boletos comprados
+    private void mostrarBoletosComprados (List<Boleto> boletos, int precioTotal) {
+        try {
+            StringBuilder boletosStr = new StringBuilder();
+            if (boletos.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "No hay películas en la cartelera en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                } else {
+                    for (Boleto b : boletos) {
+                    boletosStr.append("Película: ").append(b.getNombrePelicula()).append("\n")
+                                .append("Horario: ").append(b.getFecha()).append(" - ").append(b.getHora()).append("\n")
+                                .append("Asiento: ").append(b.getAsiento()).append("\n")
+                                .append("Clave: ").append(b.toString());
+                }
+                boletosStr.append("Precio total: $").append(precioTotal).append("\n");
+
+                // Creamos un JScrollPane para mostrar los boletos comprados en un área de texto desplazable
+                JScrollPane scrollPane = new JScrollPane(new JTextArea(boletosStr.toString())); // Área de texto dentro del JScrollPane
+                scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+
+                JOptionPane.showMessageDialog(null, scrollPane, "Boletos Comprados", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al mostrar los boletos comprados: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-        
-        List<String> boletos = seleccionarAsiento(asientos, funcionSeleccionada);
-        
-        return boletos; 
     }
 
     // Método auxiliar para seleccionar función
@@ -85,7 +131,8 @@ public class Cliente extends Persona {
                 return null;
             } else {
                 for (Funcion f : funciones) {
-                funcionesStr.append(i).append(". ").append("ID película: ").append(f.getIDPelicula()).append("\n")
+                funcionesStr.append(i).append(". ").append(f.getNombrePelicula()).append("\n")
+                            .append("ID película: ").append(f.getIDPelicula()).append("\n")
                             .append("Fecha: ").append(f.getFecha()).append("\n")
                             .append("Hora: ").append(f.getHora()).append("\n")
                             .append("Sala: ").append(f.getSala()).append("\n\n");
@@ -97,14 +144,22 @@ public class Cliente extends Persona {
                 scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
 
                 JOptionPane.showMessageDialog(null, scrollPane, "Funciones", JOptionPane.INFORMATION_MESSAGE);
-                String idSeleccionado = JOptionPane.showInputDialog(null, "Ingresa el ID de la película para seleccionar la función:", "Seleccionar Película", JOptionPane.QUESTION_MESSAGE);
+                String peliculaSeleccionada = JOptionPane.showInputDialog(null,
+                "Ingresa la película o el ID de la película para seleccionar la función:",
+                "Seleccionar Película", JOptionPane.QUESTION_MESSAGE);
+
                 for (Funcion f : funciones) {
-                    if (f.getIDPelicula().toLowerCase().equals(idSeleccionado.toLowerCase())) {
+                    if (f.getIDPelicula().toLowerCase().equals(peliculaSeleccionada.toLowerCase()) ||
+                    f.getNombrePelicula().toLowerCase().equals(peliculaSeleccionada.toLowerCase())) {
                         int funcionSeleccionada = Integer.parseInt(JOptionPane.showInputDialog(null,
-                        "Ingrese el N° de función que desea seleccionar:\n" + funcionesStr.toString(), 
+                        "Ingrese el N° de función que desea seleccionar:\n" + funcionesStr, 
                         "Seleccionar Función", 
                         JOptionPane.QUESTION_MESSAGE)) - 1; // Restamos 1 porque el índice es un número menos al mostrado para el usuario.
                         return funciones.get(funcionSeleccionada);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Error. No se ha encontrado la película solicitada",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                        return null;
                     }
                 }
             }
@@ -116,7 +171,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar asiento
-    public List<String> seleccionarAsiento(String[][] asientos, Funcion funcion) {
+    public List<Boleto> seleccionarAsiento(String[][] asientos, Funcion funcion) {
         // Mostrar el mapa de asientos
         verAsientos(asientos, funcion);
         
@@ -187,16 +242,14 @@ public class Cliente extends Persona {
 
                 // Validación de formato básico (mínimo 2 caracteres)
                 JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1.", "Error", JOptionPane.ERROR_MESSAGE);
-                if (asientoSeleccionado.length() > 3) {
+                if (asientoSeleccionado.length() > 3 || asientoSeleccionado.length() < 2) {
                     continue; // Repite el bucle 'do-while'
                 }
 
                 try {
                     String letraStr, numeroStr;
                     // Parseo de la letra y el número
-                    if (asientoSeleccionado.length() < 3) {
-                        throw new IllegalArgumentException("Formato inválido. Ejemplo: A1, B10.");
-                    } else if (asientoSeleccionado.length() == 2) {
+                    if (asientoSeleccionado.length() == 2) {
                         letraStr = asientoSeleccionado.substring(0, 1);
                         numeroStr = asientoSeleccionado.substring(1, 2);
                     } else { // longitud == 3
@@ -262,8 +315,15 @@ public class Cliente extends Persona {
                     );
                 }
             } while (!asientoReservado);
+            // Creamos los hilos que muestran el proceso del pago
+            ThreadBancario procesoPago = new ThreadBancario();
+            Thread hiloProceso = new Thread();
+
+            hiloProceso.run();
+
+            // Creamos los boletos
             Boleto boleto = new Boleto(funcion.getIdPelicula(), funcion.getFecha(), funcion.getHora(), funcion.getSala(), ultimoAsientoReservado);
-            boletosComprados.add(boleto.toString());
+            boletosComprados.add(boleto);
         }
     return boletosComprados; // Devuelve una lista con los boletos comprados
 }
@@ -351,7 +411,6 @@ public class Cliente extends Persona {
         );
     }
 
-
     // Método para comprar en la dulcería
     public static void comprarDulceria (Orden orden) {
 
@@ -363,6 +422,7 @@ public class Cliente extends Persona {
         String sabor = "";
         Combo combo = new Combo("", 0); // Inicialización de la variable combo
         Alimento alimento = new Alimento("", "", 0); // Inicialización de la variable alimento
+        List<Combo> comanda = orden.generarOrden(); 
 
         try {
             // Solicitamos al usuario que elija un combo o una orden personalizada
@@ -376,16 +436,16 @@ public class Cliente extends Persona {
 
             switch(seleccion) {
                 case 0:
-                    orden.generarOrden().add(combo.crearComboAmix());
+                    comanda.add(combo.crearComboAmix());
                     break;
                 case 1:
-                    orden.generarOrden().add(combo.crearComboNachos());
+                    comanda.add(combo.crearComboNachos());
                     break;
                 case 2:
-                    orden.generarOrden().add(combo.crearComboPalomitas());   
+                    comanda.add(combo.crearComboPalomitas());   
                     break;
                 case 3:
-                    orden.generarOrden().add(combo.crearComboBuenTrio());
+                    comanda.add(combo.crearComboBuenTrio());
                     break;
                 case 4:
                     boolean agregarMas = true;
@@ -425,15 +485,22 @@ public class Cliente extends Persona {
                             agregarMas = false;
                         }
                     }
-                    orden.generarOrden().add(ordenPersonalizada);              
+                    comanda.add(ordenPersonalizada);
+                    break;              
             }
+            // Creamos los hilos que muestran el proceso del pago
+            ThreadBancario procesoPago = new ThreadBancario();
+            Thread hiloProceso = new Thread();
+
+            hiloProceso.run();
+            
+            // Algoritmo para obtener el ID de la orden
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     // Método auxiliar para seleccionar el tamaño del alimento
-
     private static int seleccionarTamanio(String tipoAlimento, String[] tamaniosAlimentos) {
         return JOptionPane.showOptionDialog(null, "Selecciona el tamaño de " + tipoAlimento, "Tamaño de " + tipoAlimento,
                 JOptionPane.DEFAULT_OPTION,
@@ -465,5 +532,18 @@ public class Cliente extends Persona {
                 sabores,
                 sabores[0]);
         return sabores[saborSeleccionado];
-    }    
+    }
+
+    // Método auxiliar que genera un ID del nombre del cliente
+    public String generarIdNombre() {
+        // Genera un ID con las iniciales de la película
+        String[] palabras = {this.getNombre(), this.getApellidoP(), this.getApellidoM()};
+        StringBuilder id = new StringBuilder();
+        for (String palabra : palabras) {
+            if (palabra != null && !palabra.trim().isEmpty()) { 
+                id.append(palabra.trim().charAt(0));
+            } 
+        }
+        return id.toString().toUpperCase();
+    }
 }
