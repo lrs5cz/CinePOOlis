@@ -38,44 +38,72 @@ public class Combo {
 
     public Combo crearComboAmix() {
         this.nombreCombo = "Combo amix";
-        this.precioCombo = 170; // $30 de ahorro
         this.alimentosCombo = new ArrayList<>();
-        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 0)); // Precio original: 80
-        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 0));
-        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 0)); // Precio original: 60
+        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 80)); // Precio original: 80
+        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60));
+        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60)); // Precio original: 60
+        int precio = 0;
+        // Sumamos los precios y los seteamos en 0, ya que nos pueden molestar en el futuro
+        for (Alimento a : this.alimentosCombo) {
+            precio += a.getPrecio();
+            a.setPrecio(0);
+        }
+        // 10% de descuento
+        this.precioCombo = precio * 0.9;
         return this; // Retorna el combo creado
     }
 
     public Combo crearComboNachos() {
         this.nombreCombo = "Combo Nachos";
-        this.precioCombo = 250; // $40 de ahorro
         this.alimentosCombo = new ArrayList<>();
-        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 0)); 
-        this.alimentosCombo.add(new Alimento("Nachos", "Jumbo", 0)); // Precio original: 90
-        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 0));
-        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 0));
+        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 80)); 
+        this.alimentosCombo.add(new Alimento("Nachos", "Jumbo", 90)); 
+        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60));
+        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60));
+        int precio = 0;
+        // Sumamos los precios y los seteamos en 0, ya que nos pueden molestar en el futuro
+        for (Alimento a : this.alimentosCombo) {
+            precio += a.getPrecio();
+            a.setPrecio(0);
+        }
+        // 10% de descuento
+        this.precioCombo = precio * 0.9; 
         return this; // Retorna el combo creado
     }
 
     public Combo crearComboBuenTrio() {
-        this.nombreCombo = "Combo Buen Trio";
-        this.precioCombo = 350; // $50 de ahorro
+        this.nombreCombo = "Combo Buen Trio"; 
         this.alimentosCombo = new ArrayList<>();
-        this.alimentosCombo.add(new Alimento("Palomitas", "Mega", 0)); // Precio original: 90
-        this.alimentosCombo.add(new Alimento("Nachos", "Mega", 0)); // Precio original: 100
-        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 0)); // Precio original: 70
-        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 0));
-        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 0));
+        this.alimentosCombo.add(new Alimento("Palomitas", "Mega", 90)); 
+        this.alimentosCombo.add(new Alimento("Nachos", "Mega", 100)); 
+        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 70)); 
+        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 70));
+        this.alimentosCombo.add(new Alimento("Refresco", "Mega", 70));
+        int precio = 0;
+        // Sumamos los precios y los seteamos en 0, ya que nos pueden molestar en el futuro
+        for (Alimento a : this.alimentosCombo) {
+            precio += a.getPrecio();
+            a.setPrecio(0);
+        }
+        // 10% de descuento
+        this.precioCombo = precio * 0.9;
         return this; // Retorna el combo creado
     }
 
     public Combo crearComboQueMeVes() {
         this.nombreCombo = "Combo Que Me Ves";
-        this.precioCombo = 200; // $30 de ahorro
         this.alimentosCombo = new ArrayList<>();
-        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 0)); 
-        this.alimentosCombo.add(new Alimento("Nachos", "Jumbo", 0)); 
-        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 0));
+        this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 80)); 
+        this.alimentosCombo.add(new Alimento("Nachos", "Jumbo", 90)); 
+        this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60));
+        int precio = 0;
+        // Sumamos los precios y los seteamos en 0, ya que nos pueden molestar en el futuro
+        for (Alimento a : this.alimentosCombo) {
+            precio += a.getPrecio();
+            a.setPrecio(0);
+        }
+        // 10% de descuento
+        this.precioCombo = precio * 0.9;
         return this; // Retorna el combo creado
     }
 
@@ -83,8 +111,8 @@ public class Combo {
         this.nombreCombo = "Orden Personalizada";
         this.alimentosCombo = alimentosPersonalizados;
         this.precioCombo = 0;
-        for (Alimento alimento : alimentosPersonalizados) {
-            this.precioCombo += alimento.getPrecio();
+        for (Alimento a : this.alimentosPersonalizados) {
+            this.precioCombo += a.getPrecio();
         }
         return this; // Retorna el combo creado
     }
