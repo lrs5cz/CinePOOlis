@@ -60,8 +60,8 @@ public class Administrador extends Empleado {
             StringBuilder unStringBuilder = new StringBuilder("Pelicula disponibles:\n");
             for(int i = 0; i<peliculas.size();i++){
                 unStringBuilder.append((i+1)).append(". ").append(peliculas.get(i).getNombrePelicula()).append("\n");
-                JOptionPane.showMessageDialog(null, unStringBuilder);
             }
+            JOptionPane.showMessageDialog(null, unStringBuilder.toString());
             JOptionPane.showConfirmDialog(null, "Ingrese el numero de la pelicula");
             String seleccion = JOptionPane.showInputDialog("Ingrese el numero de la pelicula que desea sleccionar");
             if(seleccion == null) return;
