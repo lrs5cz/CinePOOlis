@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Combo {
     private List<Alimento> alimentosCombo;
     private String nombreCombo;
@@ -5,7 +8,7 @@ public class Combo {
 
     public Combo(String nombreCombo, int precioCombo) {
         this.nombreCombo = nombreCombo;
-        this.alimentos = new ArrayList<>();
+        this.alimentosCombo = new ArrayList<>();
         this.precioCombo = precioCombo;
     }
 
@@ -31,7 +34,7 @@ public class Combo {
     }
 
     public void agregarAlimento(Alimento alimentoCombo) {
-        this.alimentos.add(alimentoCombo);
+        this.alimentosCombo.add(alimentoCombo);
     }
 
     // Métodos
@@ -49,7 +52,7 @@ public class Combo {
             a.setPrecio(0);
         }
         // 10% de descuento
-        this.precioCombo = precio * 0.9;
+        this.precioCombo = (int)Math.round(precio * 0.9);
         return this; // Retorna el combo creado
     }
 
@@ -67,7 +70,7 @@ public class Combo {
             a.setPrecio(0);
         }
         // 10% de descuento
-        this.precioCombo = precio * 0.9; 
+        this.precioCombo = (int)Math.round(precio * 0.9);
         return this; // Retorna el combo creado
     }
 
@@ -86,7 +89,7 @@ public class Combo {
             a.setPrecio(0);
         }
         // 10% de descuento
-        this.precioCombo = precio * 0.9;
+        this.precioCombo = (int)Math.round(precio * 0.9);
         return this; // Retorna el combo creado
     }
 
@@ -103,7 +106,7 @@ public class Combo {
             a.setPrecio(0);
         }
         // 10% de descuento
-        this.precioCombo = precio * 0.9;
+        this.precioCombo = (int)Math.round(precio * 0.9);
         return this; // Retorna el combo creado
     }
 
@@ -111,7 +114,7 @@ public class Combo {
         this.nombreCombo = "Orden Personalizada";
         this.alimentosCombo = alimentosPersonalizados;
         this.precioCombo = 0;
-        for (Alimento a : this.alimentosPersonalizados) {
+        for (Alimento a : this.alimentosCombo) {
             this.precioCombo += a.getPrecio();
         }
         return this; // Retorna el combo creado
