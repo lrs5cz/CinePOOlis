@@ -1,17 +1,24 @@
 import java.io.*;
 import java.util.*;
 import javax.swing.JOptionPane;
-public class GestorDearchivosAdministrador {
-    //Se crea el archivo de peliculas 
+
+public class GestorDeArchivosAdministrador {
+
+    // Se crea el archivo de peliculas 
     private File archivoDePeliculas = new File("peliculasAgregadas.txt");
     private File archivoDeFunciones = new File("funcionesAgregadas.txt");
+    private File boletosComprados = new File("boletosComprados.txt");
+    private File historialDeDulceria = new File("historialDeDulceria.txt");
+    private File usuariosRegistrados = new File("usuariosRegistrados.dat");
+
     //Metodo para guardar peliculas en el archivo "peliculasAgregadas.txt"
     public void guardarPeliculaEnArchivo(Pelicula unaPelicula) throws IOException{//La excepcion se maneja en la interfaz grafica 
         FileWriter objetoFileWriter = new FileWriter(archivoDePeliculas,true);
         objetoFileWriter.write(unaPelicula.toString() + "\n");
         objetoFileWriter.close();
     }
-    //Metodo para cargar las peliculas del archivo "peliculasAgregadas.txt"
+
+    // Metodo para cargar las peliculas del archivo "peliculasAgregadas.txt"
     public List<Pelicula> cargarPeliculas() throws IOException{
         List<Pelicula> listaDePeliculasDelArchivo = new ArrayList<>();
         if(!archivoDePeliculas.exists()){
@@ -31,12 +38,14 @@ public class GestorDearchivosAdministrador {
         return listaDePeliculasDelArchivo;
         
     }
+
     public void guardarFuncionesEnArchivo(Funcion unaFuncion) throws IOException{
         FileWriter objetoFileWriter = new FileWriter(archivoDeFunciones,true);
         objetoFileWriter.write(unaFuncion.toString() + "\n");
         objetoFileWriter.close();
     }  
-    public List<Funcion> mostrarFunciones(String fecha, String sala) throws IOException{
+
+    public List<Funcion> mostrarFunciones(String fecha, String sala, Pelicula pelicula) throws IOException{
         List<Funcion> listaDeFuncionesDelArchivo = new ArrayList<>();
         File archivoDeFunciones = new File("funcionesAgregadas.txt");
         if(!archivoDeFunciones.exists()){
@@ -45,19 +54,19 @@ public class GestorDearchivosAdministrador {
         }
         BufferedReader objetoReader = new BufferedReader(new FileReader(archivoDeFunciones));
         String linea;
-         while((linea = objetoReader.readLine()) != null){
+        while((linea = objetoReader.readLine()) != null){
             String[] partes = linea.split("\\|");
-            if(partes.length == 4){
-                Funcion funcionLeida = new Funcion(partes[0],partes[1],partes[2],partes[3]);
+            if(partes.length == 5){
+                Funcion funcionLeida = new Funcion(partes[0], partes[1], partes[2], pelicula);
                 listaDeFuncionesDelArchivo.add(funcionLeida);
             }
         }
         objetoReader.close();
         return listaDeFuncionesDelArchivo;
-
     }
+
     //Validación de media hora entre funciones
-    public boolean validarIntervaloEntreFunciones(String salaNueva , String nuevaFecha, String nuevaHora) throws IOException {
+    public boolean validarIntervaloEntreFunciones(String salaNueva , String nuevaFecha, String nuevaHora, Pelicula pelicula) throws IOException {
         if(!archivoDeFunciones.exists()){
             JOptionPane.showMessageDialog(null,"Puedes agregar a la hora que quieras","ARCHIVO NO CREADO",1);
             return true;
@@ -66,7 +75,6 @@ public class GestorDearchivosAdministrador {
             String linea;
             while((linea = objetReader.readLine()) != null){
                 String[] datos = linea.split("\\|");
-                String id = datos[0];
                 String fecha = datos[1];
                 String hora = datos[2];
                 String sala = datos[3];
@@ -76,7 +84,7 @@ public class GestorDearchivosAdministrador {
                 int horaExistente = Integer.parseInt(hora.substring(0,2)) * 60 + Integer.parseInt(hora.substring(2,4));
                 int horaNueva = Integer.parseInt(nuevaHora.substring(0,2)) * 60 + Integer.parseInt(nuevaHora.substring(2,4));
                 if(Math.abs(horaExistente - horaNueva) < 30){
-                    Funcion unaFuncion = new Funcion(id, fecha, hora, sala);
+                    Funcion unaFuncion = new Funcion(fecha, hora, sala, pelicula);
                     JOptionPane.showMessageDialog(null,"Coincide con: "+ unaFuncion.toString(),"Hay una funcion programada:",0);
                     return false;
                 }
