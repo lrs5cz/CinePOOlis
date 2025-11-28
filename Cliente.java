@@ -10,7 +10,6 @@ public class Cliente extends Persona {
     private static final int[] PRECIOS_REFRESCO = {45, 50, 60, 70};
 
     // Atributos
-    private Cuenta cuenta;
     private String tarjetaBancaria;
 
 
@@ -46,7 +45,7 @@ public class Cliente extends Persona {
             } else {
                 for (Pelicula pelicula : cartelera) {
                 carteleraStr.append("Nombre: ").append(pelicula.getNombrePelicula()).append("\n")
-                            .append("Género: ").append(pelicula.getGeneroPelicula()).append("\n")
+                            .append("Género: ").append(pelicula.getGenero()).append("\n")
                             .append("Sinopsis: ").append(pelicula.getSinopsis()).append("\n")
                             .append("Duración: ").append(pelicula.getDuracion()).append("\n\n");
                 }
@@ -65,7 +64,7 @@ public class Cliente extends Persona {
     // Método para comprar boletos (Retorna la clave de los boletos)
     public List<String> comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos) {
         // Creamos una lista para las claves de los boletos
-        List<String> boletosClave = new List<String>();
+        List<String> boletosClave = new ArrayList<String>();
         do {
             try {
                 // Seleccionamos la función
@@ -103,7 +102,7 @@ public class Cliente extends Persona {
                     return;
                 } else {
                     for (Boleto b : boletos) {
-                    boletosStr.append("Película: ").append(b.getNombrePelicula()).append("\n")
+                    boletosStr.append("Película: ").append(b.getNombrePelicula()).append("\n") // 1. Se quitó nombrePelicula
                                 .append("Horario: ").append(b.getFecha()).append(" - ").append(b.getHora()).append("\n")
                                 .append("Asiento: ").append(b.getAsiento()).append("\n")
                                 .append("Clave: ").append(b.toString());
@@ -123,51 +122,46 @@ public class Cliente extends Persona {
 
     // Método auxiliar para seleccionar función
     private Funcion seleccionarFuncion(List<Funcion> funciones) {
-        int i = 1;
-        StringBuilder funcionesStr = new StringBuilder("Cartelera de Películas:\n\n");
-        try {
-            if (funciones.isEmpty()) {
-                JOptionPane.showMessageDialog(null, "No hay funciones programadas en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
-                return null;
-            } else {
-                for (Funcion f : funciones) {
-                funcionesStr.append(i).append(". ").append(f.getNombrePelicula()).append("\n")
-                            .append("ID película: ").append(f.getIDPelicula()).append("\n")
-                            .append("Fecha: ").append(f.getFecha()).append("\n")
-                            .append("Hora: ").append(f.getHora()).append("\n")
-                            .append("Sala: ").append(f.getSala()).append("\n\n");
-                            i++;
-                }
 
-                // Creamos un JScrollPane para mostrar las funciones seleccionables
-                JScrollPane scrollPane = new JScrollPane(new JTextArea(funciones.toString())); // Área de texto dentro del JScrollPane
-                scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
-
-                JOptionPane.showMessageDialog(null, scrollPane, "Funciones", JOptionPane.INFORMATION_MESSAGE);
-                String peliculaSeleccionada = JOptionPane.showInputDialog(null,
-                "Ingresa la película o el ID de la película para seleccionar la función:",
-                "Seleccionar Película", JOptionPane.QUESTION_MESSAGE);
-
-                for (Funcion f : funciones) {
-                    if (f.getIDPelicula().toLowerCase().equals(peliculaSeleccionada.toLowerCase()) ||
-                    f.getNombrePelicula().toLowerCase().equals(peliculaSeleccionada.toLowerCase())) {
-                        int funcionSeleccionada = Integer.parseInt(JOptionPane.showInputDialog(null,
-                        "Ingrese el N° de función que desea seleccionar:\n" + funcionesStr, 
-                        "Seleccionar Función", 
-                        JOptionPane.QUESTION_MESSAGE)) - 1; // Restamos 1 porque el índice es un número menos al mostrado para el usuario.
-                        return funciones.get(funcionSeleccionada);
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Error. No se ha encontrado la película solicitada",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                        return null;
-                    }
-                }
-            }
-        } catch (NumberFormatException nfe) {
-            JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error al mostrar la cartelera: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        if (funciones.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No hay funciones programadas en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
+            return null;
         }
+
+        StringBuilder funcionesStr = new StringBuilder("Cartelera de Películas:\n\n");
+        for (int i = 0; i < funciones.size(); i++) {
+            Funcion f = funciones.get(i);
+            funcionesStr.append((i + 1)).append(". ").append(f.getNombrePelicula()).append("\n")
+                .append("ID película: ").append(f.getIdPelicula()).append("\n")
+                .append("Fecha: ").append(f.getFecha()).append("\n")
+                .append("Hora: ").append(f.getHora()).append("\n")
+                .append("Sala: ").append(f.getSala()).append("\n\n");
+        }
+
+        // Creamos un JScrollPane para mostrar las funciones seleccionables
+        JTextArea textArea = new JTextArea(funcionesStr.toString());
+        textArea.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(textArea); // Área de texto dentro del JScrollPane
+        scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+
+        JOptionPane.showMessageDialog(null, scrollPane, "Funciones Disponibles", JOptionPane.INFORMATION_MESSAGE);
+        int seleccion = 0;
+        boolean seleccionValida = false;
+        do {
+            try {
+                seleccion = Integer.parseInt(JOptionPane.showInputDialog(null, 
+                "Ingrese el índice de la función que quieres asistir", "0"));
+                // Ajustamos el índice
+                seleccion = seleccion - 1;
+                seleccionValida = true;
+            } catch (NumberFormatException nfe) {
+                JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Error al mostrar la cartelera: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } while (!seleccionValida);
+        return funciones.get(seleccion);
     }
 
     // Método auxiliar para seleccionar asiento
@@ -218,7 +212,7 @@ public class Cliente extends Persona {
 
         // Bucle para seleccionar cada asiento individualmente
         String ultimoAsientoReservado = null; 
-        List<String> boletosComprados = new ArrayList<>(); 
+        List<Boleto> boletosComprados = new ArrayList<>(); 
         for (int i = 0; i < asientosASeleccionar; i++) {
             boolean asientoReservado = false;
             
@@ -317,12 +311,12 @@ public class Cliente extends Persona {
             } while (!asientoReservado);
             // Creamos los hilos que muestran el proceso del pago
             ThreadBancario procesoPago = new ThreadBancario();
-            Thread hiloProceso = new Thread();
+            Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
 
             hiloProceso.run();
 
             // Creamos los boletos
-            Boleto boleto = new Boleto(funcion.getIdPelicula(), funcion.getFecha(), funcion.getHora(), funcion.getSala(), ultimoAsientoReservado);
+            Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), ultimoAsientoReservado);
             boletosComprados.add(boleto);
         }
     return boletosComprados; // Devuelve una lista con los boletos comprados
@@ -415,7 +409,7 @@ public class Cliente extends Persona {
     public static void comprarDulceria (Orden orden) {
 
         // Arreglo para almacenar las opciones disponibles
-        String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo palomitas", "Combo buen trío", "Orden personalizada"};
+        String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo buen trío", "Combo ¿Qué me ves?", "Orden personalizada"};
         String[] opcionesAlimentos = {"Palomitas", "Nachos", "Refresco"};
         String[] tamaniosAlimentos = {"Mediano", "Grande", "Jumbo", "Mega"};
         int tamanio = -1, seleccion = -1, precio = 0;
@@ -442,10 +436,10 @@ public class Cliente extends Persona {
                     comanda.add(combo.crearComboNachos());
                     break;
                 case 2:
-                    comanda.add(combo.crearComboPalomitas());   
+                    comanda.add(combo.crearComboBuenTrio());  
                     break;
                 case 3:
-                    comanda.add(combo.crearComboBuenTrio());
+                    comanda.add(combo.crearComboQueMeVes());
                     break;
                 case 4:
                     boolean agregarMas = true;
@@ -490,7 +484,7 @@ public class Cliente extends Persona {
             }
             // Creamos los hilos que muestran el proceso del pago
             ThreadBancario procesoPago = new ThreadBancario();
-            Thread hiloProceso = new Thread();
+            Thread hiloProceso = new Thread(procesoPago, "Compra en dulcería");
 
             hiloProceso.run();
             
