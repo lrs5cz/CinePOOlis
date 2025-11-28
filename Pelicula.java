@@ -1,5 +1,5 @@
 public class Pelicula {
-    String nombrePelicula, genero, sinopsis, duracion;
+    private String nombrePelicula, genero, sinopsis, duracion;
 
     // Constructor
     public Pelicula(String nombrePelicula, String genero, String sinopsis, String duracion) {
@@ -52,5 +52,10 @@ public class Pelicula {
             id.append(palabra.charAt(0));
         }
         return id.toString().toUpperCase();
+    }
+
+    @Override
+    public String toString() {
+        return nombrePelicula + "|" + genero + "|" + sinopsis + "|" + duracion;
     }
 }
