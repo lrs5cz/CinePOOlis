@@ -1,10 +1,11 @@
 public class Boleto extends Funcion {
     // Atributos
-    private String asiento, precio;
+    private String asiento;
+    private int precio;
 
     // Constructor
-    public Boleto(Pelicula pelicula, String fecha, String hora, String sala, String asiento) {
-        super(pelicula, fecha, hora, sala);
+    public Boleto(String fecha, String hora, String sala, Pelicula pelicula, String asiento) {
+        super(fecha, hora, sala, pelicula);
         this.asiento = asiento;
         if ((sala.toLowerCase()).equals("sala vip")) {
             this.precio = 190;
@@ -32,6 +33,6 @@ public class Boleto extends Funcion {
 
     @Override
     public String toString() {
-        return super.toString() + ":" + asiento;
+        return super.toString() + "|" + asiento;
     }
 }
