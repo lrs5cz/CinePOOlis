@@ -1,5 +1,5 @@
 import java.io.IOException;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 public class CinePOOlis {
     public static void main(String[] args) {
@@ -17,7 +17,7 @@ public class CinePOOlis {
                         "1. Agregar Pelicula a Cartelera\n" +
                         "2. Agregar Funcion\n" +
                         "3. Salir\n" +
-                        "Ingrese su opcion:", "Menú del administrador",
+                        "Ingrese su opcion:", "1",
                         JOptionPane.INFORMATION_MESSAGE
                 );
 
@@ -26,7 +26,7 @@ public class CinePOOlis {
                 try {
                     opcion = Integer.parseInt(opcionStr);
                 } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null, "Ingrese un numero valido");
+                    JOptionPane.showMessageDialog(null, "Ingrese un numero valido", "Error", JOptionPane.INFORMATION_MESSAGE);
                     continue;
                 }
 
