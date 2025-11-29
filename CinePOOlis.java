@@ -130,8 +130,8 @@ public class CinePOOlis {
             gestor.guardarUsuariosEnArchivo(cliente);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            JOptionPane.showMessageDialog(null, "Registro completado exitosamente!", "Registro Clientes", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -149,7 +149,7 @@ public class CinePOOlis {
 
     public static void main(String[] args) {
         GestorDeArchivos gestor = new GestorDeArchivos();
-        registroClientes(gestor);
+        menuPrincipal(gestor);
     }
 }
 
