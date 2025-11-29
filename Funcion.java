@@ -133,6 +133,24 @@ public class Funcion {
         }
     }
 
+    public String[][] cargarAsientos() {
+        GestorDeArchivos gestor = new GestorDeArchivos();
+        String sala = getSala().toUpperCase();
+        switch (sala) {
+            case "SALA A":
+            case "A":
+                return gestor.cargarAsientosA(10, 15);
+            case "SALA B":
+            case "B":
+                return gestor.cargarAsientosB(10, 15);
+            case "SALA VIP":
+            case "VIP":
+                return gestor.cargarAsientosVIP(8, 6);
+            default:
+                return null;
+        }
+    }
+
     // Genera un ID de la función
     @Override
     public String toString() {
