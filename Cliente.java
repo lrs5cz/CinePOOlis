@@ -1,7 +1,8 @@
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.*;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Cliente extends Persona {
     // Constantes para los métodos del cliente
@@ -11,7 +12,6 @@ public class Cliente extends Persona {
 
     // Atributos
     private String tarjetaBancaria;
-
 
     // Constructor
     public Cliente(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta, String tarjetaBancaria) {
@@ -235,8 +235,8 @@ public class Cliente extends Persona {
                 asientoSeleccionado = asientoSeleccionado.trim().toUpperCase();
 
                 // Validación de formato básico (mínimo 2 caracteres)
-                JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1.", "Error", JOptionPane.ERROR_MESSAGE);
                 if (asientoSeleccionado.length() > 3 || asientoSeleccionado.length() < 2) {
+                    JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1 o B10.", "Error", JOptionPane.ERROR_MESSAGE); // Mover el mensaje aquí
                     continue; // Repite el bucle 'do-while'
                 }
 
@@ -313,7 +313,14 @@ public class Cliente extends Persona {
             ThreadBancario procesoPago = new ThreadBancario();
             Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
 
-            hiloProceso.run();
+            hiloProceso.start();
+
+            try {
+                hiloProceso.join(); 
+            } catch (InterruptedException e) {
+                JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
+                return null; // Cancelamos la compra de boletos.
+            }
 
             // Creamos los boletos
             Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), ultimoAsientoReservado);
@@ -406,7 +413,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar en la dulcería
-    public static void comprarDulceria (Orden orden) {
+    public static void comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
 
         // Arreglo para almacenar las opciones disponibles
         String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo buen trío", "Combo ¿Qué me ves?", "Orden personalizada"};
@@ -486,9 +493,19 @@ public class Cliente extends Persona {
             ThreadBancario procesoPago = new ThreadBancario();
             Thread hiloProceso = new Thread(procesoPago, "Compra en dulcería");
 
-            hiloProceso.run();
+            hiloProceso.start();
+
+            try {
+                hiloProceso.join(); 
+            } catch (InterruptedException e) {
+                JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
+                // Cancelamos la compra de boletos.
+            }
             
             // Algoritmo para obtener el ID de la orden
+            String idCliente = cliente.generarIdNombre();
+            String idOrden = generarClaveDulceria(idCliente);
+            gestor.guardarOrdenesDeDulceria(idOrden);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -531,7 +548,7 @@ public class Cliente extends Persona {
     // Método auxiliar que genera un ID del nombre del cliente
     public String generarIdNombre() {
         // Genera un ID con las iniciales de la película
-        String[] palabras = {this.getNombre(), this.getApellidoP(), this.getApellidoM()};
+        String[] palabras = {getNombre(), getApellidoP(), getApellidoM()};
         StringBuilder id = new StringBuilder();
         for (String palabra : palabras) {
             if (palabra != null && !palabra.trim().isEmpty()) { 
@@ -539,5 +556,22 @@ public class Cliente extends Persona {
             } 
         }
         return id.toString().toUpperCase();
+    }
+
+    // Método para generar clave de dulcería
+    public static String generarClaveDulceria (String id) {
+        // Creamos instancias que manejan el tiempo
+        ZonedDateTime tiempoCompleto = ZonedDateTime.now();
+
+        // Patrón de la fecha
+        DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("yyyyMMdd");
+        String fechaFormateada = tiempoCompleto.format(formatoFecha);
+
+        // Patrón de la hora
+        DateTimeFormatter formatoHora = DateTimeFormatter.ofPattern("HHmm");
+        String horaFormateada = tiempoCompleto.format(formatoHora);
+
+        // Generamos la clave
+        return id + "|" + fechaFormateada + "|" + horaFormateada;
     }
 }
