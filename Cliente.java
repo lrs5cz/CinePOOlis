@@ -48,14 +48,17 @@ public class Cliente extends Persona {
                     comprarBoletos(cartelera, funciones, gestor);
                 }
                 case 2 -> {
-                    comprarDulceria(null, gestor, null);
+                    // List<Combo> ordenes = new ArrayList<>();
+                    // Orden orden = new Orden(ordenes);
+                    // Solucionar lo del cliente en comprarDulceria
+                    // comprarDulceria(orden, gestor, cliente); (Recibe este cliente como parámetro pero no puede instanciarlo por ser estático)
                 }
                 case 3 -> {
-
+                    // También recibe cliente como parámetro
+                    // Cargamos las listas
+                    // revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
                 }
-                default -> {
-
-                }
+                default -> CinePOOlis.menuPrincipal(gestor);
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
