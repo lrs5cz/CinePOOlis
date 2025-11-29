@@ -79,5 +79,17 @@ public abstract class Persona {
     public void setCorreoCuenta(String correo) {
         cuenta.setCorreo(correo);
     }
-}
 
+    // Método auxiliar que genera un ID del nombre del cliente
+    public String generarIdNombre() {
+        // Genera un ID con las iniciales de la película
+        String[] palabras = {getNombre(), getApellidoP(), getApellidoM()};
+        StringBuilder id = new StringBuilder();
+        for (String palabra : palabras) {
+            if (palabra != null && !palabra.trim().isEmpty()) { 
+                id.append(palabra.trim().charAt(0));
+            } 
+        }
+        return id.toString().toUpperCase();
+    }
+}

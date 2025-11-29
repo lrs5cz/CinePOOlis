@@ -15,5 +15,4 @@ public class Empleado extends Persona {
     public void setTurno(String turno) {
         this.turno = turno;
     }   
-
 }

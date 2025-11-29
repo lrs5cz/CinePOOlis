@@ -3,7 +3,7 @@ public class Cuenta {
     private String nickname, password, correo;
 
     // Constructor
-    public CuentaUsuario(String nickname, String password, String correo) {
+    public Cuenta(String nickname, String password, String correo) {
         this.nickname = nickname;
         this.password = password;
         this.correo = correo;

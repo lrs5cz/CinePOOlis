@@ -5,7 +5,7 @@ public class ThreadBancario implements Runnable {
 
     private long duracionTotal = 0;
 
-    public void cargoTarjeta() {
+    public void cargoTarjeta() throws InterruptedException {
         // Genera un valor entre 2 y 5 segundos para la pausa
         Random random = new Random();
         int intervalo = random.nextInt(2000, 5001); 

@@ -119,4 +119,3 @@ public class Funcion {
         return idPelicula + "|" + fecha + "|" + hora + "|" + sala;
     }
 }
-

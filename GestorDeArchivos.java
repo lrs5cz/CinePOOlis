@@ -9,7 +9,9 @@ public class GestorDeArchivos {
     private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
     private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
-    private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt");
+    private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes (Notificaciones de órdenes LISTAS)
+    private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_JAL.txt"
+    private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para el mensaje temporal del cliente (progreso/listo)
 
     // Método para registrar usuarios en el archivo "usuariosRegistrados.dat"
     public void guardarUsuariosEnArchivo(Persona persona) throws IOException {
@@ -127,7 +129,7 @@ public class GestorDeArchivos {
     }  
 
     // Método para cargar las funciones del archivo "funcionesAgregadas.txt"
-    public List<Funcion> mostrarFunciones(String fecha, String sala, Pelicula pelicula) throws IOException{
+    public List<Funcion> mostrarFunciones(List<Pelicula> cartelera) throws IOException{
         List<Funcion> listaDeFuncionesDelArchivo = new ArrayList<>();
 
         if(!ARCHIVO_FUNCIONES.exists()){
@@ -138,13 +140,27 @@ public class GestorDeArchivos {
         String linea;
         while((linea = objetoReader.readLine()) != null){
             String[] partes = linea.split("\\|");
-            if(partes.length == 5) {
-                Funcion funcionLeida = new Funcion(partes[0], partes[1], partes[2], pelicula);
+            String idPelicula = partes[0];
+            String fecha = partes[1];
+            String hora = partes[2];
+            String sala = partes[3];
+            Pelicula pelicula = buscarPeliculaPorId(cartelera, idPelicula);
+            if(partes.length == 4) {
+                Funcion funcionLeida = new Funcion(fecha, hora, sala, pelicula);
                 listaDeFuncionesDelArchivo.add(funcionLeida);
             }
         }
         objetoReader.close();
         return listaDeFuncionesDelArchivo;
+    }
+
+    private Pelicula buscarPeliculaPorId(List<Pelicula> cartelera, String id) {
+        for (Pelicula p : cartelera) {
+            if (p.getIdPelicula().equals(id)) { // Asumo que Pelicula tiene getIdPelicula()
+                return p;
+            }
+        }
+        return null; // Película no encontrada
     }
 
     // Validación de media hora entre funciones
@@ -183,7 +199,7 @@ public class GestorDeArchivos {
     }
 
     // Método para cargar los boletos comprados del archivo "boletosComprados.txt"
-    public List<Boleto> cargarBoletosEnArchivo (Pelicula pelicula) throws IOException {
+    public List<Boleto> cargarBoletosEnArchivo (List<Pelicula> cartelera) throws IOException {
         List<Boleto> listaDeBoletosDelArchivo = new ArrayList<>();
 
         if(!BOLETOS_COMPRADOS.exists()) {
@@ -196,13 +212,39 @@ public class GestorDeArchivos {
 
         while((linea = objetoReader.readLine()) != null){
             String[] partes = linea.split("\\|");
+            String idPelicula = partes[0];
+            String fecha = partes[1];
+            String hora = partes[2];
+            String sala = partes[3];
+            String asiento = partes[5];
+            Pelicula pelicula = buscarPeliculaPorId(cartelera, idPelicula);
             if(partes.length == 5) {
-                Boleto boletoLeido = new Boleto(partes[0], partes[1], partes[2], pelicula, partes[4]);
+                Boleto boletoLeido = new Boleto(fecha, hora, sala, pelicula, asiento);
                 listaDeBoletosDelArchivo.add(boletoLeido);
             }
         }
         objetoReader.close();
         return listaDeBoletosDelArchivo;
+    }
+
+    public List<Boleto> cargarBoletosPorFuncion (List<Boleto> boletos, Funcion funcion) throws IOException {
+        List<Boleto> listaDeBoletosDeLaFuncion = new ArrayList<>();
+        for (Boleto b : boletos) {
+            if(boletoInFuncion(funcion, b)) listaDeBoletosDeLaFuncion.add(b);
+        }
+        return listaDeBoletosDeLaFuncion;
+    }
+
+    // Método que comprueba si un boleto se encuentra en una función
+    private boolean boletoInFuncion(Funcion f, Boleto b) {
+        boolean funcionHasBoleto = false;
+        boolean esMismoId = f.getIdPelicula().equals(b.getIdPelicula());
+        boolean esMismoNombre = f.getNombrePelicula().equals(b.getNombrePelicula());
+        boolean esMismaFecha = f.getFecha().equals(b.getFecha());
+        boolean esMismaHora = f.getHora().equals(b.getHora());
+        boolean esMismaSala = f.getSala().equals(b.getSala());
+        if (esMismoId && esMismoNombre && esMismaFecha && esMismaHora && esMismaSala) funcionHasBoleto = true;
+        return funcionHasBoleto;
     }
 
     // Método para guardar órdenes en el archivo "historialDeDulceria.txt"
@@ -254,5 +296,60 @@ public class GestorDeArchivos {
             }
 
         return ordenesDeUsuario;
+    }
+
+    public void guardarNotificacionCliente(String clave) throws IOException {
+        // Usamos HISTORIAL_DULCERIA para este propósito, como se define en el código original.
+        FileWriter objetoFileWriter = new FileWriter(HISTORIAL_DULCERIA, true);
+        objetoFileWriter.write(clave + "\n");
+        objetoFileWriter.close();
+    }
+
+    public void guardarHistorialVendedor(String idVendedor, String logEntry) throws IOException {
+        String nombreArchivo = HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt";
+        
+        FileWriter objetoFileWriter = new FileWriter(nombreArchivo, true); // true para adjuntar
+        objetoFileWriter.write(logEntry + "\n");
+        objetoFileWriter.close();
+    }  
+    
+    public String buscarOrdenEnHistorialVendedor(String claveOrden, String idVendedor) throws IOException {
+        String nombreArchivo = HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt";
+        File archivoVendedor = new File(nombreArchivo);
+
+        if (!archivoVendedor.exists()) {
+            return null; 
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoVendedor))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                if (linea.startsWith("Clave: " + claveOrden + " |")) {
+                    return linea;
+                }
+            }
+        }
+        return null; // Clave no encontrada en este historial
+    }
+
+    public void guardarMensajeNotificacion(String mensaje) throws IOException {
+        // Usamos 'false' para sobrescribir el archivo en cada llamada
+        FileWriter objetoFileWriter = new FileWriter(ESTADO_ORDEN, false); 
+        objetoFileWriter.write(mensaje);
+        objetoFileWriter.close();
+    }
+
+    public String leerMensajeNotificacion() throws IOException {
+        StringBuilder contenido = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(ESTADO_ORDEN))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                contenido.append(linea).append("\n");
+            }
+        } catch (FileNotFoundException e) {
+            // Si el archivo no existe, retornamos un mensaje por defecto o vacío.
+            return "El estado de la orden no está disponible.";
+        }
+        return contenido.toString().trim();
     }
 }

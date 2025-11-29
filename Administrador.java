@@ -29,16 +29,16 @@ public class Administrador extends Empleado {
             try {
                 banderaRepetir =false;
 
-                String nombrePelicula = JOptionPane.showInputDialog("Ingrese el nombre de la película:", "Agregar Película");
-                String generoPelicula = JOptionPane.showInputDialog("Ingrese el género de la película:", "Agregar Película");
-                String sinopsis = JOptionPane.showInputDialog("Ingrese la sinopsis de la película:", "Agregar Película");
-                String duracion = JOptionPane.showInputDialog("Ingrese la duración de la película (formato hh:mm):", "Agregar Película");
+                String nombrePelicula = JOptionPane.showInputDialog("Ingrese el nombre de la película:", "Ej. Titanic");
+                String generoPelicula = JOptionPane.showInputDialog("Ingrese el género de la película:", "Ej. Terror");
+                String sinopsis = JOptionPane.showInputDialog("Ingrese la sinopsis de la película:");
+                String duracion = JOptionPane.showInputDialog("Ingrese la duración de la película (formato hh:mm):", "Ej. 02:24");
                 
                 Pelicula nuevaPelicula = new Pelicula(nombrePelicula, generoPelicula, sinopsis, duracion);
-                GestorDeArchivosAdministrador unGestorDearchivosAdministrador = new GestorDeArchivosAdministrador();//Crea un onbjeto de la clase GestorDearchivosAdministrador
-                unGestorDearchivosAdministrador.guardarPeliculaEnArchivo(nuevaPelicula); //Llama al metodo que guarda la pelicula en el archivo
-                List<Pelicula> cartelera = unGestorDearchivosAdministrador.cargarPeliculas(); //Lista de peliculas cargadas desde el archivo
-                cartelera.add(nuevaPelicula);//Agregar a la lista de cartelera
+                GestorDeArchivos unGestorDearchivosAdministrador = new GestorDeArchivos();// Crea un objeto de la clase GestorDearchivosAdministrador
+                unGestorDearchivosAdministrador.guardarPeliculaEnArchivo(nuevaPelicula); // Llama al metodo que guarda la pelicula en el archivo
+                List<Pelicula> cartelera = unGestorDearchivosAdministrador.cargarPeliculas(); // Lista de peliculas cargadas desde el archivo
+                cartelera.add(nuevaPelicula);// Agregar a la lista de cartelera
                 JOptionPane.showMessageDialog(null, "La película " + nombrePelicula + " ha sido agregada a la cartelera.");
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Error al agregar la película. Por favor, intente de nuevo.");
@@ -49,7 +49,7 @@ public class Administrador extends Empleado {
 
 
     public void agregarFuncion() throws IOException{
-        GestorDeArchivosAdministrador gestor = new GestorDeArchivosAdministrador();
+        GestorDeArchivos gestor = new GestorDeArchivos();
         try {
             List<Pelicula> peliculas = gestor.cargarPeliculas();
             if(peliculas.isEmpty()){
@@ -59,8 +59,8 @@ public class Administrador extends Empleado {
             //Mostrar peliculas
 
             StringBuilder unStringBuilder = new StringBuilder("Pelicula disponibles:\n");
-            for(int i = 0; i<peliculas.size();i++) {
-                unStringBuilder.append((i+1)).append(". ").append(peliculas.get(i).getNombrePelicula()).append("\n");
+            for(int i = 0; i < peliculas.size(); i++) {
+                unStringBuilder.append((i + 1)).append(". ").append(peliculas.get(i).getNombrePelicula()).append("\n");
             }
 
             JOptionPane.showMessageDialog(null, unStringBuilder.toString());
@@ -73,20 +73,20 @@ public class Administrador extends Empleado {
 
             if(seleccion == null) return;
 
-                int idselec;
+                int idSelec;
             try {
-                idselec = Integer.parseInt(seleccion)-1;
+                idSelec = Integer.parseInt(seleccion)-1;
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Error al procesar, Numero no valido"+ e.getMessage());
                 return;
             }
 
-            if (idselec < 0 || idselec >= peliculas.size()) {
+            if (idSelec < 0 || idSelec >= peliculas.size()) {
                 JOptionPane.showMessageDialog(null, "Ese numero esta fuera de rango");
                 return;
             }
 
-            Pelicula unaPeli = peliculas.get(idselec);
+            Pelicula unaPeli = peliculas.get(idSelec);
 
             String fecha = JOptionPane.showInputDialog("Ingrese la fecha de la función (dd/MM/yyyy", "Agregar Función");
             if(fecha == null)return;
@@ -98,7 +98,8 @@ public class Administrador extends Empleado {
             if (salaIdx < 0 || salaIdx > 3) return;
             
             //Mostramos las funciones existentes
-            List<Funcion> funcionesExistentes = gestor.mostrarFunciones(fecha, salaSeleccionada, unaPeli);
+            List<Pelicula> cartelera = gestor.cargarPeliculas();
+            List<Funcion> funcionesExistentes = gestor.mostrarFunciones(cartelera);
             StringBuilder programacion = new StringBuilder("Programacion para "+ fecha + " en Salas \n");
             if(funcionesExistentes.isEmpty()) {
                 programacion.append("(No hay funciones)\n");

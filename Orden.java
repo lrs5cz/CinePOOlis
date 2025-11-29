@@ -1,4 +1,21 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Orden {
+    private List<Combo> orden = new ArrayList<>();
+    
+    public Orden (List<Combo> orden) {
+        this.orden = orden;
+    }
+
+    public List<Combo> getOrden () {
+        return orden;
+    }
+
+    public void setOrden(List<Combo> orden) {
+        this.orden = orden;
+    }
+    
     public List<Combo> generarOrden() {
         return new ArrayList<>();
     }

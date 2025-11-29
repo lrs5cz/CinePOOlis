@@ -1,5 +1,5 @@
 public class Pelicula {
-    private String nombrePelicula, genero, sinopsis, duracion;
+    private String nombrePelicula, genero, sinopsis, duracion, idPelicula;
 
     // Constructor
     public Pelicula(String nombrePelicula, String genero, String sinopsis, String duracion) {
@@ -7,6 +7,7 @@ public class Pelicula {
         this.genero = genero;
         this.sinopsis = sinopsis;
         this.duracion = duracion;
+        this.idPelicula = generarIdPelicula();
     }
 
     // Getters y Setters
@@ -40,6 +41,14 @@ public class Pelicula {
 
     public void setDuracion(String duracion) {
         this.duracion = duracion;
+    }
+
+    public String getIdPelicula() {
+        return idPelicula;
+    }
+
+    public void setIdPelicula(String idPelicula) {
+        this.idPelicula = idPelicula;
     }
 
     // Métodos

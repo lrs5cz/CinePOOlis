@@ -1,4 +1,5 @@
 public class Alimento {
+
     // Atributos
     private String nombreAlimento, tamanio;
     private int precio;
