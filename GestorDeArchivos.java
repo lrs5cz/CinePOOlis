@@ -40,7 +40,6 @@ public class GestorDeArchivos {
                 dos.writeUTF(vendedor.getTurno());
                 dos.writeUTF(vendedor.getDiaDescanso());
             }
-            JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente!", "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -207,9 +206,9 @@ public class GestorDeArchivos {
     }
 
     // Método para guardar órdenes en el archivo "historialDeDulceria.txt"
-    public void guardarOrdenesDeDulceria(Cliente cliente) throws IOException { //La excepcion se maneja en la interfaz grafica 
+    public void guardarOrdenesDeDulceria(String clave) throws IOException { //La excepcion se maneja en la interfaz grafica 
         FileWriter objetoFileWriter = new FileWriter(HISTORIAL_DULCERIA,true);
-        objetoFileWriter.write(cliente.generarClaveDulceria() + "\n");
+        objetoFileWriter.write(clave + "\n");
         objetoFileWriter.close();
     }
 
@@ -257,8 +256,3 @@ public class GestorDeArchivos {
         return ordenesDeUsuario;
     }
 }
-
-    
-}
-
-
