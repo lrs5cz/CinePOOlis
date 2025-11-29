@@ -1,3 +1,7 @@
+import java.io.IOException;
+
+import javax.swing.JOptionPane;
+
 public class Funcion {
     // Atributos
     String nombrePelicula, idPelicula, fecha, hora, sala;
@@ -111,6 +115,22 @@ public class Funcion {
             }
         }
         return asientosVIP;
+    }
+
+    public void guardarAsientosEnArchivo() {
+        GestorDeArchivos gestor = new GestorDeArchivos();
+        String[][] asientosA = obtenerAsientosA();
+        String[][] asientosB = obtenerAsientosB();
+        String[][] asientosVIP = obtenerAsientosVIP();
+        try {
+            gestor.guardarAsientosA(asientosA);
+            gestor.guardarAsientosB(asientosB);
+            gestor.guardarAsientosVIP(asientosVIP);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Genera un ID de la función
