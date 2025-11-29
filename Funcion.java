@@ -6,7 +6,7 @@ public class Funcion {
     // Constructor
     public Funcion(String fecha, String hora, String sala, Pelicula pelicula) {
         this.nombrePelicula = pelicula.getNombrePelicula();
-        this.idPelicula = pelicula.generarIdPelicula(); // Generar id se tiene que poner afuera en el main pasar coomo parametro
+        this.idPelicula = pelicula.generarIdPelicula(); 
         this.fecha = fecha;
         this.hora = hora;
         this.sala = sala;
@@ -119,3 +119,4 @@ public class Funcion {
         return idPelicula + "|" + fecha + "|" + hora + "|" + sala;
     }
 }
+
