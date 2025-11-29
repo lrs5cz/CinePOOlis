@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.*;
 import javax.swing.JOptionPane;
 
-public class GestorDeArchivosAdministrador {
+public class GestorDeArchivos {
 
     // Se crea el archivo de peliculas
     private final File USUARIOS_REGISTRADOS = new File("usuariosRegistrados.dat"); 
@@ -260,4 +260,5 @@ public class GestorDeArchivosAdministrador {
 
     
 }
+
 
