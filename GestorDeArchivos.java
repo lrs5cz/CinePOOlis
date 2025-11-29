@@ -9,9 +9,9 @@ public class GestorDeArchivos {
     private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
     private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
-    private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes (Notificaciones de órdenes LISTAS)
-    private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_JAL.txt"
-    private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para el mensaje temporal del cliente (progreso/listo)
+    private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes 
+    private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
+    private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para leer si una orden ya está lista o aún no
 
     // Método para registrar usuarios en el archivo "usuariosRegistrados.dat"
     public void guardarUsuariosEnArchivo(Persona persona) throws IOException {
@@ -351,5 +351,143 @@ public class GestorDeArchivos {
             return "El estado de la orden no está disponible.";
         }
         return contenido.toString().trim();
+    }
+
+    public void guardarAsientosA(String[][] asientos) throws IOException {
+        FileWriter objetoFileWriter = new FileWriter("asientosA.txt",true);
+        for (int i = 0; i < asientos.length; i++) {
+            for (int j = 0; j < asientos[i].length; j++) {
+                objetoFileWriter.write(asientos[i][j]);
+                // Agrega una tabulación como separador, excepto después del último elemento de la fila
+                if (j < asientos[i].length - 1) {
+                    objetoFileWriter.write("\t");
+                }
+            }
+            // Agrega un salto de línea después de cada fila, excepto la última
+            if (i < asientos.length - 1) {
+                objetoFileWriter.write("\n");
+            }
+        }
+        objetoFileWriter.close();
+    }
+
+    public String[][] cargarAsientosA(int numFilas, int numColumnas) {
+        String[][] asientos = new String[numFilas][numColumnas];
+        try (BufferedReader reader = new BufferedReader(new FileReader("asientosA.txt"))) {
+            String linea;
+            int fila = 0;
+
+            while ((linea = reader.readLine()) != null) {
+                // Divide la línea por el delimitador (la coma)
+                String[] datosFila = linea.split(",");
+                
+                // Verifica que la fila y la columna sean las esperadas
+                if (fila < numFilas && datosFila.length == numColumnas) {
+                    for (int columna = 0; columna < numColumnas; columna++) {
+                        asientos[fila][columna] = datosFila[columna].trim();
+                    }
+                    fila++;
+                } else {
+                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
+                    return null; // Retorna null o el array vacío si hay un error de formato
+                }
+            }
+            return asientos;
+
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public void guardarAsientosVIP(String[][] asientos) throws IOException {
+        FileWriter objetoFileWriter = new FileWriter("asientosVIP.txt",true);
+        for (int i = 0; i < asientos.length; i++) {
+            for (int j = 0; j < asientos[i].length; j++) {
+                objetoFileWriter.write(asientos[i][j]);
+                // Agrega una tabulación como separador, excepto después del último elemento de la fila
+                if (j < asientos[i].length - 1) {
+                    objetoFileWriter.write("\t");
+                }
+            }
+            // Agrega un salto de línea después de cada fila, excepto la última
+            if (i < asientos.length - 1) {
+                objetoFileWriter.write("\n");
+            }
+        }
+        objetoFileWriter.close();
+    }
+
+    public String[][] cargarAsientosVIP(int numFilas, int numColumnas) {
+        String[][] asientos = new String[numFilas][numColumnas];
+        try (BufferedReader reader = new BufferedReader(new FileReader("asientosVIP.txt"))) {
+            String linea;
+            int fila = 0;
+
+            while ((linea = reader.readLine()) != null) {
+                // Divide la línea por el delimitador (la coma)
+                String[] datosFila = linea.split(",");
+                
+                // Verifica que la fila y la columna sean las esperadas
+                if (fila < numFilas && datosFila.length == numColumnas) {
+                    for (int columna = 0; columna < numColumnas; columna++) {
+                        asientos[fila][columna] = datosFila[columna].trim();
+                    }
+                    fila++;
+                } else {
+                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
+                    return null; // Retorna null o el array vacío si hay un error de formato
+                }
+            }
+            return asientos;
+
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public void guardarAsientosB(String[][] asientos) throws IOException {
+        FileWriter objetoFileWriter = new FileWriter("asientosB.txt",true);
+        for (int i = 0; i < asientos.length; i++) {
+            for (int j = 0; j < asientos[i].length; j++) {
+                objetoFileWriter.write(asientos[i][j]);
+                // Agrega una tabulación como separador, excepto después del último elemento de la fila
+                if (j < asientos[i].length - 1) {
+                    objetoFileWriter.write("\t");
+                }
+            }
+            // Agrega un salto de línea después de cada fila, excepto la última
+            if (i < asientos.length - 1) {
+                objetoFileWriter.write("\n");
+            }
+        }
+        objetoFileWriter.close();
+    }
+
+    public String[][] cargarAsientosB(int numFilas, int numColumnas) {
+        String[][] asientos = new String[numFilas][numColumnas];
+        try (BufferedReader reader = new BufferedReader(new FileReader("asientosB.txt"))) {
+            String linea;
+            int fila = 0;
+
+            while ((linea = reader.readLine()) != null) {
+                // Divide la línea por el delimitador (la coma)
+                String[] datosFila = linea.split(",");
+                
+                // Verifica que la fila y la columna sean las esperadas
+                if (fila < numFilas && datosFila.length == numColumnas) {
+                    for (int columna = 0; columna < numColumnas; columna++) {
+                        asientos[fila][columna] = datosFila[columna].trim();
+                    }
+                    fila++;
+                } else {
+                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
+                    return null; // Retorna null o el array vacío si hay un error de formato
+                }
+            }
+            return asientos;
+
+        } catch (IOException e) {
+            return null;
+        }
     }
 }
