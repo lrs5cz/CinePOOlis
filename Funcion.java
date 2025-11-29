@@ -1,11 +1,12 @@
 public class Funcion {
     // Atributos
-    String idPelicula, fecha, hora, sala;
+    String nombrePelicula, idPelicula, fecha, hora, sala;
     Pelicula pelicula;
 
     // Constructor
-    public Funcion(String idPelicula, String fecha, String hora, String sala) {
-        this.idPelicula = idPelicula;//el generar id se tiene que poner afuera en el main pasar coomo parametro
+    public Funcion(String fecha, String hora, String sala, Pelicula pelicula) {
+        this.nombrePelicula = pelicula.getNombrePelicula();
+        this.idPelicula = pelicula.generarIdPelicula(); // Generar id se tiene que poner afuera en el main pasar coomo parametro
         this.fecha = fecha;
         this.hora = hora;
         this.sala = sala;
@@ -14,6 +15,10 @@ public class Funcion {
     // Getters y Setters
     public String getIdPelicula() {
         return idPelicula;
+    }
+
+    public String getNombrePelicula() {
+        return nombrePelicula;
     }
 
     public void setIdPelicula(String idPelicula) {
@@ -42,6 +47,10 @@ public class Funcion {
 
     public void setSala(String sala) {
         this.sala = sala;
+    }
+
+    public Pelicula getPelicula () {
+        return pelicula;
     }
 
     // Función para convertir un valor numérico de fila a letra
