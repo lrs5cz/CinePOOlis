@@ -32,8 +32,36 @@ public class Cliente extends Persona {
     // Métodos
 
     // Método para mostrar el menú del cliente
-    public static void menuCliente () {
+    public static void menuCliente (GestorDeArchivos gestor) {
+        try {
+            List<Pelicula> cartelera = gestor.cargarPeliculas();
+            String[] opciones = {"Ver cartelera", "Comprar boletos", "Comprar en dulcería", "Notificaciones", "Cerrar Sesión"};
+            int opcion = JOptionPane.showOptionDialog(null, "Menú del cliente.\n\n¿Qué acción desea realizar?", "CinePOOlis",
+            JOptionPane.PLAIN_MESSAGE,  JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
 
+            switch (opcion) {
+                case 0 -> { 
+                    verCartelera(cartelera);
+                }
+                case 1 -> {
+                    List<Funcion> funciones = gestor.mostrarFunciones(cartelera);
+                    comprarBoletos(cartelera, funciones, gestor);
+                }
+                case 2 -> {
+                    comprarDulceria(null, gestor, null);
+                }
+                case 3 -> {
+
+                }
+                default -> {
+
+                }
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Método para mostrar la cartelera de películas
@@ -63,7 +91,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar boletos (Retorna la clave de los boletos)
-    public void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos, GestorDeArchivos gestor) {
+    public static void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, GestorDeArchivos gestor) {
         try {
             // Creamos una lista para las claves de los boletos y otra para los boletos
             List<String> boletosClave = new ArrayList<>();
@@ -75,7 +103,7 @@ public class Cliente extends Persona {
                     Funcion funcionSeleccionada = seleccionarFuncion(funciones);
                     if (funcionSeleccionada == null) break;
                     // Seleccionamos los asientos
-                    boletos = seleccionarAsiento(asientos, funcionSeleccionada);
+                    boletos = seleccionarAsiento(funcionSeleccionada);
                     // Añadimos las claves de los boletos
                     for (Boleto b : boletos) {
                         boletosClave.add(b.toString());
@@ -104,7 +132,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para mostrar los boletos comprados
-    private void mostrarBoletosComprados (List<Boleto> boletos, int precioTotal) {
+    private static void mostrarBoletosComprados (List<Boleto> boletos, int precioTotal) {
         try {
             StringBuilder boletosStr = new StringBuilder();
             if (boletos.isEmpty()) {
@@ -131,7 +159,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar función
-    private Funcion seleccionarFuncion(List<Funcion> funciones) {
+    private static Funcion seleccionarFuncion(List<Funcion> funciones) {
 
         if (funciones.isEmpty()) {
             JOptionPane.showMessageDialog(null, "No hay funciones programadas en este momento.", "Cartelera Vacía", JOptionPane.INFORMATION_MESSAGE);
@@ -175,9 +203,10 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar asiento
-    public List<Boleto> seleccionarAsiento(String[][] asientos, Funcion funcion) {
+    public static List<Boleto> seleccionarAsiento(Funcion funcion) {
+        String[][] asientos = funcion.cargarAsientos();
         // Mostrar el mapa de asientos
-        verAsientos(asientos, funcion);
+        verAsientos(funcion);
         
         int asientosASeleccionar = 0;
         boolean cantidadValida = false;
@@ -369,24 +398,9 @@ public class Cliente extends Persona {
      * Los asientos con * representan pasillos, no habrá asientos en esas posiciones
      */ 
     
-    public void verAsientos(String[][] asientos, Funcion funcion) {
-        String sala = funcion.getSala();
+    public static void verAsientos(Funcion funcion) {
+        String[][] asientos = funcion.cargarAsientos();
         StringBuilder asientosStr = new StringBuilder();
-
-        switch (sala) {
-            case "Sala A":
-                asientosStr.append("Asientos Sala A.\n\n");
-                break;
-            case "Sala B":
-                asientosStr.append("Asientos Sala B.\n\n");
-                break;
-            case "Sala VIP":
-                asientosStr.append("Asientos Sala VIP.\n\n");
-                break;
-            default:
-                asientosStr.append("Asientos de Sala Desconocida.\n\n");
-                break;
-        }
 
         // Si la matriz de asientos está vacía o es nula, no imprimimos nada
         if (asientos == null || asientos.length == 0) {
@@ -585,7 +599,7 @@ public class Cliente extends Persona {
     }
 
     // Método para revisar notificaciones
-    public void revisarNotificaciones(GestorDeArchivos gestor, Cliente cliente, List<Funcion> funcionesCargadas, List<Boleto> boletosCargados, List<String> ordenes) {
+    public static void revisarNotificaciones(GestorDeArchivos gestor, Cliente cliente, List<Funcion> funcionesCargadas, List<Boleto> boletosCargados, List<String> ordenes, List<Pelicula> cartelera) {
         String [] opciones = {"Revisar órdenes de compra para una función", "Revisar notificaciones de dulcería", "Regresar al menú"};
         int seleccion = JOptionPane.showOptionDialog(null, "Seleccione el tipo de notificación que desee revisar",
         "Revisar notificaciones", JOptionPane.DEFAULT_OPTION,
@@ -721,12 +735,12 @@ public class Cliente extends Persona {
                     JOptionPane.showMessageDialog(null, "Error al revisar notificaciones: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            default -> menuCliente();
+            default -> menuCliente(gestor);
         }
     }
 
     // Método auxiliar para comprobar si hay boletos comprados en una función
-    public List<Funcion> verificarFuncion(List<Funcion> funcionesCargadas, List<Boleto> boletosCargados) {
+    public static List<Funcion> verificarFuncion(List<Funcion> funcionesCargadas, List<Boleto> boletosCargados) {
         // Lista para almacenar las funciones que tengan boletos comprados por el usuario
         List<Funcion> funcionesCompradas = new ArrayList<>();
 
@@ -755,7 +769,7 @@ public class Cliente extends Persona {
     }
     
     // Método para obtener el precio total
-    public int obtenerPrecioTotal(List<Boleto> boletos) {
+    public static int obtenerPrecioTotal(List<Boleto> boletos) {
         int precioTotal = 0;
         for (Boleto b : boletos) {
             precioTotal += b.getPrecio();
