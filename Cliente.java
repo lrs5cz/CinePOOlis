@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -62,35 +63,44 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar boletos (Retorna la clave de los boletos)
-    public List<String> comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos) {
-        // Creamos una lista para las claves de los boletos
-        List<String> boletosClave = new ArrayList<String>();
-        do {
-            try {
-                // Seleccionamos la función
-                Funcion funcionSeleccionada = seleccionarFuncion(funciones);
-                if (funcionSeleccionada == null) break;
-                // Seleccionamos los asientos
-                List<Boleto> boletos = seleccionarAsiento(asientos, funcionSeleccionada);
-                // Añadimos las claves de los boletos
-                for (Boleto b : boletos) {
-                    boletosClave.add(b.toString());
+    public void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, String[][] asientos, GestorDeArchivos gestor) {
+        try {
+            // Creamos una lista para las claves de los boletos y otra para los boletos
+            List<String> boletosClave = new ArrayList<>();
+            List<Boleto> boletos = new ArrayList<>();
+
+            do {
+                try {
+                    // Seleccionamos la función
+                    Funcion funcionSeleccionada = seleccionarFuncion(funciones);
+                    if (funcionSeleccionada == null) break;
+                    // Seleccionamos los asientos
+                    boletos = seleccionarAsiento(asientos, funcionSeleccionada);
+                    // Añadimos las claves de los boletos
+                    for (Boleto b : boletos) {
+                        boletosClave.add(b.toString());
+                    }
+                    // Obtenemos el precio total
+                    int precioTotal = 0;
+                    for (Boleto b : boletos) {
+                        precioTotal += b.getPrecio();
+                    }
+                    // Mostramos los boletos comprados
+                    mostrarBoletosComprados(boletos, precioTotal);  
+                    // Salimos del bucle
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Error." + e.getMessage());
                 }
-                // Obtenemos el precio total
-                int precioTotal = 0;
-                for (Boleto b : boletos) {
-                    precioTotal += b.getPrecio();
-                }
-                // Mostramos los boletos comprados
-                mostrarBoletosComprados(boletos, precioTotal);  
-                // Salimos del bucle
-                break;
-            } catch (Exception e) {
-                System.err.println("Error." + e.getMessage());
+            } while (true);
+            for(Boleto b : boletos) {
+                gestor.guardarBoletosEnArchivo(b);
             }
-        } while (true);
-        // Retornamos la lista con la clave de los boletos
-        return boletosClave;
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Método auxiliar para mostrar los boletos comprados
@@ -413,7 +423,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar en la dulcería
-    public static void comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
+    public static Orden comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
 
         // Arreglo para almacenar las opciones disponibles
         String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo buen trío", "Combo ¿Qué me ves?", "Orden personalizada"};
@@ -489,12 +499,13 @@ public class Cliente extends Persona {
                     comanda.add(ordenPersonalizada);
                     break;              
             }
+            orden.setOrden(comanda);
             // Creamos los hilos que muestran el proceso del pago
             ThreadBancario procesoPago = new ThreadBancario();
             Thread hiloProceso = new Thread(procesoPago, "Compra en dulcería");
 
             hiloProceso.start();
-
+            
             try {
                 hiloProceso.join(); 
             } catch (InterruptedException e) {
@@ -506,11 +517,22 @@ public class Cliente extends Persona {
             String idCliente = cliente.generarIdNombre();
             String idOrden = generarClaveDulceria(idCliente);
             gestor.guardarOrdenesDeDulceria(idOrden);
+
+            // Hilo de integración
+            ThreadIntegrador integrar = new ThreadIntegrador(idOrden, orden, gestor);
+            Thread hiloIntegrador = new Thread(integrar, "Integración de Orden Dulcería");
+
+            hiloIntegrador.start();
+
+            JOptionPane.showMessageDialog(null, "Revisa la sección de notificaciones para saber \ncuando tu orden de dulcería esté lista 😉",
+            "Finalizar orden", JOptionPane.INFORMATION_MESSAGE);
+            return orden;
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return null;
         }
     }
-    
+
     // Método auxiliar para seleccionar el tamaño del alimento
     private static int seleccionarTamanio(String tipoAlimento, String[] tamaniosAlimentos) {
         return JOptionPane.showOptionDialog(null, "Selecciona el tamaño de " + tipoAlimento, "Tamaño de " + tipoAlimento,
@@ -545,19 +567,6 @@ public class Cliente extends Persona {
         return sabores[saborSeleccionado];
     }
 
-    // Método auxiliar que genera un ID del nombre del cliente
-    public String generarIdNombre() {
-        // Genera un ID con las iniciales de la película
-        String[] palabras = {getNombre(), getApellidoP(), getApellidoM()};
-        StringBuilder id = new StringBuilder();
-        for (String palabra : palabras) {
-            if (palabra != null && !palabra.trim().isEmpty()) { 
-                id.append(palabra.trim().charAt(0));
-            } 
-        }
-        return id.toString().toUpperCase();
-    }
-
     // Método para generar clave de dulcería
     public static String generarClaveDulceria (String id) {
         // Creamos instancias que manejan el tiempo
@@ -573,5 +582,184 @@ public class Cliente extends Persona {
 
         // Generamos la clave
         return id + "|" + fechaFormateada + "|" + horaFormateada;
+    }
+
+    // Método para revisar notificaciones
+    public void revisarNotificaciones(GestorDeArchivos gestor, Cliente cliente, List<Funcion> funcionesCargadas, List<Boleto> boletosCargados, List<String> ordenes) {
+        String [] opciones = {"Revisar órdenes de compra para una función", "Revisar notificaciones de dulcería", "Regresar al menú"};
+        int seleccion = JOptionPane.showOptionDialog(null, "Seleccione el tipo de notificación que desee revisar",
+        "Revisar notificaciones", JOptionPane.DEFAULT_OPTION,
+        JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
+
+        switch (seleccion) {
+            case 0 -> { 
+                try {
+                    List<Funcion> funcionesConBoleto = verificarFuncion(funcionesCargadas, boletosCargados);
+                    StringBuilder funcionesStr = new StringBuilder("\nFunciones:");
+                    int i = 1;
+                    for (Funcion f : funcionesConBoleto) {
+                        funcionesStr.append(i).append(". ").append(f.getNombrePelicula())
+                        .append(f.getFecha()).append(f.getHora());
+                        i++;
+                    }
+
+                    seleccion = Integer.parseInt(JOptionPane.showInputDialog(null,
+                        "Ingrese la función que quiere ver a detalle: " + funcionesStr, "1"));
+
+                    Funcion funcionSelec = new Funcion(null, null, null, null);
+                    
+                    for (i = 0; i < funcionesConBoleto.size(); i++) {
+                        seleccion = seleccion - 1;
+                        if(i == seleccion) {
+                            funcionSelec = funcionesConBoleto.get(i);
+                        }
+                    }
+
+                    List<Boleto> boletosFuncion = gestor.cargarBoletosPorFuncion(boletosCargados, funcionSelec);
+
+                    StringBuilder boletosClave = new StringBuilder("\nBoletos comprados:\n");
+                    for (Boleto b : boletosFuncion) boletosClave.append(b.toString()).append("\n");
+                    
+                    String funcionStr = "\nFunción #" + seleccion + "\n" + funcionSelec.getNombrePelicula() + 
+                    "\nHorario: " + funcionSelec.getFecha() + ", " + funcionSelec.getHora() + boletosClave;
+
+                    JOptionPane.showMessageDialog(null, funcionStr, "Notificaciones de funciones", JOptionPane.INFORMATION_MESSAGE);
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            case 1 -> { // Revisar notificaciones de dulcería
+                try {
+                    String idCliente = cliente.generarIdNombre();
+                    
+                    // Filtrar las órdenes compradas por este cliente.
+                    List<String> ordenesDelCliente = ordenes.stream()
+                                                    .filter(o -> o.startsWith(idCliente + "|"))
+                                                    .toList();
+
+                    // Cargar las órdenes que ya fueron terminadas por el ThreadIntegrador
+                    List<String> ordenesTerminadas = gestor.cargarHistorialDeDulceria(); 
+                    
+                    if (ordenesDelCliente.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "No tienes órdenes de dulcería compradas.", "Notificaciones de Dulcería", JOptionPane.INFORMATION_MESSAGE);
+                        break;
+                    }
+                    
+                    // Mostrar la lista numerada al cliente
+                    StringBuilder ordenesStr = new StringBuilder("\nÓrdenes de " + cliente.getNombre() + "\n");
+                    for (int i = 0; i < ordenesDelCliente.size(); i++) {
+                        // Muestra las claves para que el cliente seleccione.
+                        ordenesStr.append(i + 1).append(". ").append(ordenesDelCliente.get(i)).append("\n");
+                    }
+
+                    // Pedir al cliente que seleccione una orden.
+                    String inputSeleccion = JOptionPane.showInputDialog(null,
+                        "Órdenes de Dulcería: \n" + ordenesStr.toString() + 
+                        "\nIngrese el número de la orden que desea verificar:", "1");
+                    
+                    if (inputSeleccion == null) break; // Si cancela
+
+                    int indiceSeleccionado = Integer.parseInt(inputSeleccion) - 1;
+                    
+                    if (indiceSeleccionado < 0 || indiceSeleccionado >= ordenesDelCliente.size()) {
+                        JOptionPane.showMessageDialog(null, "Selección inválida.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    String claveSeleccionada = ordenesDelCliente.get(indiceSeleccionado);
+                    
+                    if (ordenesTerminadas.contains(claveSeleccionada)) {
+                    String idVendedorLog = cliente.generarIdNombre(); 
+
+                    String logDetallado = gestor.buscarOrdenEnHistorialVendedor(claveSeleccionada, idVendedorLog);
+                    
+                    String nombreVendedor;
+                    
+                    if (logDetallado != null) {
+                        // Cargamos todos los usuarios para encontrar el nombre del vendedor
+                        List<Persona> usuarios = gestor.cargarUsuarios();
+                        
+                        // Buscamos el objeto Vendedor 
+                        nombreVendedor = usuarios.stream()
+                            .filter(p -> p instanceof Vendedor)
+                            .filter(v -> ((Vendedor)v).generarIdNombre().equals(idVendedorLog))
+                            .map(Persona::getNombre)
+                            .findFirst()
+                            .orElse("Vendedor Desconocido"); // Usar fallback
+
+                    } else {
+                        // Fallback si no se puede leer el log del vendedor (problema de archivo)
+                        nombreVendedor = "Vendedor Temporal"; 
+                    }
+
+                    // Formato de la clave: ID|AAAAMMDD|hhmm
+                    String[] partesClave = claveSeleccionada.split("\\|");
+                    String fechaHoraTerminacionStr = partesClave[1] + ":" + partesClave[2]; // AAAAMMDD:hhmm
+
+                    String mensajeListo = String.format(
+                        "Hola, soy %s. Ya está lista tu orden de dulcería. Puedes pasar a recogerla en la fila de dulcería para ventas de la app. %s",
+                        nombreVendedor, fechaHoraTerminacionStr
+                    );
+
+                    gestor.guardarMensajeNotificacion(mensajeListo);
+                        
+                    } else {
+                        // Orden en progreso (La clave existe en 'ordenesDelCliente' pero no en 'ordenesTerminadas').
+                        String mensajeProgreso = "Estamos trabajando arduamente para que tus alimentos sean deliciosos. Por favor, espera un poco más =D";
+                        gestor.guardarMensajeNotificacion(mensajeProgreso);
+                    }
+                    
+                    // 5. Mostrar el mensaje al cliente leyendo el archivo
+                    String mensajeFinal = gestor.leerMensajeNotificacion();
+                    JOptionPane.showMessageDialog(null, mensajeFinal, "Estado de la Orden: " + claveSeleccionada, JOptionPane.INFORMATION_MESSAGE);
+
+                } catch (NumberFormatException nfe) {
+                    JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(null, "Error al acceder a los archivos de órdenes: " + e.getMessage(), "Error I/O", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, "Error al revisar notificaciones: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            default -> menuCliente();
+        }
+    }
+
+    // Método auxiliar para comprobar si hay boletos comprados en una función
+    public List<Funcion> verificarFuncion(List<Funcion> funcionesCargadas, List<Boleto> boletosCargados) {
+        // Lista para almacenar las funciones que tengan boletos comprados por el usuario
+        List<Funcion> funcionesCompradas = new ArrayList<>();
+
+        // Comprobamos si hay boletos comprados por el usuario en esa película
+        for (Funcion f : funcionesCargadas) {
+            boolean hasBoletos = false;
+            for (Boleto b : boletosCargados) {
+                boolean esMismoId = f.getIdPelicula().equals(b.getIdPelicula());
+                boolean esMismoNombre = f.getNombrePelicula().equals(b.getNombrePelicula());
+                boolean esMismaFecha = f.getFecha().equals(b.getFecha());
+                boolean esMismaHora = f.getHora().equals(b.getHora());
+                boolean esMismaSala = f.getSala().equals(b.getSala());
+
+                if (esMismoId && esMismoNombre && esMismaFecha && esMismaHora && esMismaSala) {
+                    hasBoletos = true; // Se encontró un boleto para esta función
+                    break;             // No necesitamos revisar más boletos para esta función
+                }
+                
+                if (hasBoletos) {
+                    funcionesCompradas.add(f);
+                    break;
+                }
+            }
+        }
+        return funcionesCompradas;
+    }
+    
+    // Método para obtener el precio total
+    public int obtenerPrecioTotal(List<Boleto> boletos) {
+        int precioTotal = 0;
+        for (Boleto b : boletos) {
+            precioTotal += b.getPrecio();
+        }
+        return precioTotal;
     }
 }
