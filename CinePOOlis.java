@@ -1,9 +1,10 @@
 import java.io.IOException;
 import javax.swing.*;
+import java.util.List;
 
 public class CinePOOlis {
 
-    public static void menuPrincipal(GestorDeArchivos gestor) {
+    public static void menuPrincipal(GestorDeArchivos gestor, Validaciones v, List<Persona> usuarios) {
         String[] opcionesUsuario = {"Nuevo registro de cliente", "Ingreso al sistema","Nuevo registro de empleado", "Salir"};
         int accion = JOptionPane.showOptionDialog(null, "Bienvenido a CinePOOlis",
             "CinePOOlis",
@@ -14,9 +15,8 @@ public class CinePOOlis {
             opcionesUsuario[0]
         );
         switch (accion) {
-            case 0 -> registroClientes(gestor);
-            case 1 -> registroEmpleado(gestor);
-            case 2 -> accesoSistema(gestor);
+            case 0 -> registroClientes(gestor, v, usuarios);
+            case 1 -> accesoSistema(gestor);
 
             default -> {
                 SalidaThread salida = new SalidaThread();
@@ -26,26 +26,26 @@ public class CinePOOlis {
         } 
     }
 
-    public static void registroClientes(GestorDeArchivos gestor) {
-        String nombre, apellidoP, apellidoM, numeroCelular, nickname, correo = "", password = "", tarjetaBancaria = "";
+    public static void registroClientes(GestorDeArchivos gestor, Validaciones v, List<Persona> usuariosEnSistema) {
+        String nombre, apellidoP, apellidoM, numeroCelular, nickname = "", correo = "", password = "", tarjetaBancaria = "";
         int edad = 0;
         try {
             nombre = JOptionPane.showInputDialog(null, "Ingrese su nombre",
-        "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+        "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
             if(nombre == null) return;
         
             apellidoP = JOptionPane.showInputDialog(null, "Ingrese su apellido paterno", 
-            "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+            "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
             if(apellidoP == null) return;
             
             apellidoM = JOptionPane.showInputDialog(null, "Ingrese su apellido materno", 
-            "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+            "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
             if(apellidoM == null) return;
 
             boolean edadValida = false;
             while (!edadValida) {
                 try {
-                    String inputEdad = JOptionPane.showInputDialog(null, "Ingrese su edad", "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+                    String inputEdad = JOptionPane.showInputDialog(null, "Ingrese su edad", "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                     if (inputEdad == null) return;
                     
                     edad = Integer.parseInt(inputEdad);
@@ -62,24 +62,50 @@ public class CinePOOlis {
             }
 
             numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
-            "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
-            if (numeroCelular == null) return;
+            "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
+                if (numeroCelular == null) return;
 
-            nickname = JOptionPane.showInputDialog(null, "Ingrese su nickname", 
-            "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
-            if (nickname == null) return;
+                boolean celularUnico = false;
+            while (!celularUnico) {
+                numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
+                "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
+                if (numeroCelular == null) return;
+
+                if (v.existeNumeroCelular(usuariosEnSistema, numeroCelular)) {
+                    JOptionPane.showMessageDialog(null, "Error. El número de celular ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else if (numeroCelular.length() != 10) {
+                    JOptionPane.showMessageDialog(null, "Error. Número celular inválido", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    celularUnico = true;
+                }
+            }
+
+            boolean nicknameUnico = false;
+            while (!nicknameUnico) {
+                nickname = JOptionPane.showInputDialog(null, "Ingrese su nickname", 
+            "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
+                if (nickname == null) return;
+                
+                if (v.existeNickname(usuariosEnSistema, nickname)) {
+                    JOptionPane.showMessageDialog(null, "Error. El nickname ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    celularUnico = true;
+                }
+            }
 
             boolean correoValido = false;
             while(!correoValido) {
                 try {
                     correo = JOptionPane.showInputDialog(null, "Ingrese su correo", 
-            "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+            "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                     if (correo == null) return;
                     JOptionPane.showMessageDialog(null, "Verificando correo electrónico...", "Verificación", JOptionPane.INFORMATION_MESSAGE);
                     
                     if (!(correo.endsWith("@gmail.com") || correo.endsWith("@hotmail.com") ||
                     correo.endsWith("@yahoo.com") || correo.endsWith("@outlook.com"))) {
                         throw new MailMismatchException("Error. El correo ingresado es inválido");
+                    } else if(v.existeCorreo(usuariosEnSistema, correo)) {
+                        JOptionPane.showMessageDialog(null, "Error, el correo ya ha sido registrado, intenta nuevamente", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(null, "Correo validado", "Verificación", JOptionPane.INFORMATION_MESSAGE);
                         correoValido = true;
@@ -89,18 +115,16 @@ public class CinePOOlis {
                 }
             }
             
-
             boolean passwordValida = false;
             while (!passwordValida) {
                 try {
-                    password = JOptionPane.showInputDialog(null, "Ingrese su contraseña", "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+                    password = JOptionPane.showInputDialog(null, "Ingrese su contraseña\n(Ingresa al menos 10 caracteres, una mayúscula, una minúscula, un número\ny un caracter especial[@, #, %, $,])",
+                    "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                     if (password == null) return;
                     
                     String confirmacion = JOptionPane.showInputDialog(null, "Confirme su contraseña", "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
                     if (confirmacion == null) return;
-
-                    validarPassword(password, confirmacion); 
-                    passwordValida = true;
+                    passwordValida = v.validarPassword(password, confirmacion);
                 } catch (PasswordException e) {
                     JOptionPane.showMessageDialog(null, e.getMessage(), "Error de Contraseña", JOptionPane.ERROR_MESSAGE);
                 }
@@ -109,17 +133,21 @@ public class CinePOOlis {
             boolean tarjetaValida = false;
             while (!tarjetaValida) {
                 try {
-                    tarjetaBancaria = JOptionPane.showInputDialog(null, "Ingrese su tarjeta bancaria (16 dígitos)", "Registro de usuarios", JOptionPane.INFORMATION_MESSAGE);
+                    tarjetaBancaria = JOptionPane.showInputDialog(null, "Ingrese su tarjeta bancaria (16 dígitos)",
+                    "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
 
                     if (tarjetaBancaria == null) {
                         throw new NullPointerException("Operación de tarjeta cancelada por el usuario.");
                     }
 
-                    if (tarjetaBancaria.length() != 16) {
+                    if (v.existeTarjeta(usuariosEnSistema, tarjetaBancaria)) {
+                        JOptionPane.showMessageDialog(null, "Error. La tarjeta bancaria ya está registrada.", "Error", JOptionPane.ERROR_MESSAGE);
+                        continue; 
+                    }
+
+                    if (tarjetaBancaria.length() != 16 || !tarjetaBancaria.matches("\\d{16}")) {
                         throw new IndexOutOfBoundsException("Error. Ingrese una tarjeta válida (16 dígitos).");
                     }
-                    // Opcional: Validar que sean solo dígitos.
-                    // if (!tarjetaBancaria.matches("\\d{16}")) { throw new Exception("Solo se permiten dígitos."); }
                     
                     tarjetaValida = true;
                 } catch (NullPointerException | IndexOutOfBoundsException e) {
@@ -137,132 +165,23 @@ public class CinePOOlis {
         }
     }
 
-    public static void registroEmpleado(GestorDeArchivos gestor) {
-
-    String nombre, apellidoP, apellidoM, numeroCelular, nickname;
-    String correo = "", password = "", turno = "";
-    int edad = 0;
-
-    try {
-
-        nombre = JOptionPane.showInputDialog(null, "Ingrese nombre del empleado",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-        if (nombre == null) return;
-
-        apellidoP = JOptionPane.showInputDialog(null, "Ingrese apellido paterno",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-        if (apellidoP == null) return;
-
-        apellidoM = JOptionPane.showInputDialog(null, "Ingrese apellido materno",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-        if (apellidoM == null) return;
-
-        boolean edadValida = false;
-        while (!edadValida) {
-            try {
-                String inputEdad = JOptionPane.showInputDialog(null, "Ingrese edad",
-                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-                if (inputEdad == null) return;
-
-                edad = Integer.parseInt(inputEdad);
-
-                if (edad < 18 || edad > 99) {
-                    throw new IndexOutOfBoundsException("La edad debe ser entre 18 y 99.");
-                }
-                edadValida = true;
-
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Ingrese solo números.", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IndexOutOfBoundsException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-
-        numeroCelular = JOptionPane.showInputDialog(null, "Ingrese número telefónico",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-        if (numeroCelular == null) return;
-
-        nickname = JOptionPane.showInputDialog(null, "Ingrese nickname de empleado",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-        if (nickname == null) return;
-
-        boolean correoValido = false;
-        while (!correoValido) {
-            try {
-                correo = JOptionPane.showInputDialog(null, "Ingrese correo del empleado",
-                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-                if (correo == null) return;
-
-                if (!(correo.endsWith("@gmail.com") || correo.endsWith("@hotmail.com")
-                        || correo.endsWith("@yahoo.com") || correo.endsWith("@outlook.com"))) {
-                    throw new MailMismatchException("Correo inválido.");
-                }
-
-                correoValido = true;
-
-            } catch (MailMismatchException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-
-        boolean passValida = false;
-        while (!passValida) {
-            try {
-                password = JOptionPane.showInputDialog(null, "Ingrese contraseña",
-                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-                if (password == null) return;
-
-                String confirm = JOptionPane.showInputDialog(null, "Confirme la contraseña",
-                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-                if (confirm == null) return;
-
-                validarPassword(password, confirm);
-                passValida = true;
-
-            } catch (PasswordException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Contraseña inválida", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-
-        // Aquí se pide el turno
-        turno = JOptionPane.showInputDialog(null,
-                "Ingrese turno del empleado (Matutino / Vespertino / Nocturno):",
-                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
-
-        if (turno == null) return;
-
-        // Crear cuenta y objeto Empleado
-        Cuenta cuenta = new Cuenta(nickname, password, correo);
-        Empleado empleado = new Empleado(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno);
-
-        // Guardar en archivo
-        gestor.guardarUsuariosEnArchivo(empleado);
-
-        JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-
-    public static void validarPassword(String password, String confirmacion) throws PasswordException{
-        if (!(password.contains("#") || password.contains("@")||
-        password.contains("&") || password.contains("!")|| password.contains("%")))
-        throw new PasswordException("Error. La contraseña no es válida");
-        else if (password.length() < 10) throw new PasswordException("Error. La contraseña no es válida");
-        else if (!password.equals(confirmacion)) throw new PasswordException("Error. La contraseña no es válida");
-    }
-
     public static void accesoSistema(GestorDeArchivos gestor) {
 
     }
 
     public static void main(String[] args) {
-        GestorDeArchivos gestor = new GestorDeArchivos();
-        menuPrincipal(gestor);
+        try {
+                GestorDeArchivos gestor = new GestorDeArchivos();
+            Validaciones v = new Validaciones();
+            List<Persona> usuarios = gestor.cargarUsuarios();
+            menuPrincipal(gestor, v, usuarios);
+        } catch (IOException e) {
+
+        }
     }
 }
+
+// Excepciones auxiliares
 
 class PasswordException extends Exception {
     public PasswordException(String mensaje) {
@@ -275,4 +194,10 @@ class MailMismatchException extends Exception {
         super(mensaje);
     }
 
+}
+
+class UsuarioExistenteException extends Exception {
+    public UsuarioExistenteException(String mensaje) {
+        super(mensaje);
+    }
 }
