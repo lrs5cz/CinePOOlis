@@ -1,5 +1,4 @@
 import java.io.IOException;
-
 import javax.swing.JOptionPane;
 
 public class Funcion {
@@ -154,6 +153,6 @@ public class Funcion {
     // Genera un ID de la función
     @Override
     public String toString() {
-        return idPelicula + "|" + fecha + "|" + hora + "|" + sala;
+        return idPelicula + ":" + fecha.replace("/", "") + ":" + hora + ":" + sala;
     }
 }
