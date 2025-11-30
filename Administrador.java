@@ -180,7 +180,7 @@ public class Administrador extends Empleado {
             //agregarFuncion(funciones, cartelera, opcion)
         } while (opcionint != 0);
     }
-
+//funcion qye registra a los empleados
     public void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Persona> usuariosEnSistema) {
         String nombre, apellidoP, apellidoM, numeroCelular, nickname = "";
         String correo = "", password = "", turno = "";
@@ -199,7 +199,7 @@ public class Administrador extends Empleado {
             apellidoM = JOptionPane.showInputDialog(null, "Ingrese su apellido materno",
                     "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
             if (apellidoM == null) return;
-
+             // Validar edad 
             boolean edadValida = false;
             while (!edadValida) {
                 try {
@@ -224,7 +224,7 @@ public class Administrador extends Empleado {
             numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
                 "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                 if (numeroCelular == null) return;
-
+                // Validar celular único
                 boolean celularUnico = false;
             while (!celularUnico) {
                 numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
@@ -299,7 +299,53 @@ public class Administrador extends Empleado {
 
             // Crear cuenta y objeto Empleado
             Cuenta cuenta = new Cuenta(nickname, password, correo);
-            Empleado empleado = new Empleado(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno);
+            //Empleado empleado = new Empleado(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno);
+            // Aquí se elige el tipo de empleado
+        String[] opciones = {"Administrador", "Vendedor"};
+        int tipo = JOptionPane.showOptionDialog( null,"Seleccione el tipo de empleado a registrar","Tipo de Empleado",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opciones,
+                opciones[0]
+        );
+
+        Empleado empleado = null;
+
+        switch (tipo) {
+            case 0 -> {
+                String diasTrabajo = JOptionPane.showInputDialog(null, "Ingrese los días de trabajo del Administrador:");
+                if (diasTrabajo == null) return;
+
+                empleado = new Administrador(
+                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, diasTrabajo
+                );
+            }
+
+            case 1 -> {
+                String area = JOptionPane.showInputDialog(null, "Ingrese el área del Vendedor:");
+                if (area == null) return;
+
+                empleado = new Vendedor(
+                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, area
+                );
+            }
+
+            default -> {
+                JOptionPane.showMessageDialog(null, "Registro cancelado.");
+                return;
+            }
+        }
+
+        // Guardar en sistemas
+        usuariosEnSistema.add(personaRegistrada);
+        gestor.guardarUsuariosEnArchivo(personaRegistrada);
+
+        JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
 
             // Guardar en archivo
             gestor.guardarUsuariosEnArchivo(empleado);
@@ -311,3 +357,4 @@ public class Administrador extends Empleado {
         }
     }
 }
+
