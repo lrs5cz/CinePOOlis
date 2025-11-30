@@ -139,7 +139,7 @@ public class GestorDeArchivos {
         BufferedReader objetoReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES));
         String linea;
         while((linea = objetoReader.readLine()) != null){
-            String[] partes = linea.split("\\|");
+            String[] partes = linea.split(":");
             String idPelicula = partes[0];
             String fecha = partes[1];
             String hora = partes[2];
@@ -165,6 +165,7 @@ public class GestorDeArchivos {
 
     // Validación de media hora entre funciones
     public boolean validarIntervaloEntreFunciones(String salaNueva , String nuevaFecha, String nuevaHora, Pelicula pelicula) throws IOException {
+        String nuevaFechaNormalizada = nuevaFecha.replace("/", "");
         if(!ARCHIVO_FUNCIONES.exists()){
             JOptionPane.showMessageDialog(null,"Puedes agregar a la hora que quieras","ARCHIVO NO CREADO",1);
             return true;
@@ -172,12 +173,12 @@ public class GestorDeArchivos {
         try (BufferedReader objetReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES))){
             String linea;
             while((linea = objetReader.readLine()) != null){
-                String[] datos = linea.split("\\|");
+                String[] datos = linea.split(":");
                 String fecha = datos[1];
                 String hora = datos[2];
                 String sala = datos[3];
 
-                if(!fecha.equals(nuevaFecha)) continue;
+                if(!fecha.equals(nuevaFechaNormalizada)) continue;
                 if(!sala.equals(salaNueva)) continue;
                 int horaExistente = Integer.parseInt(hora.substring(0,2)) * 60 + Integer.parseInt(hora.substring(2,4));
                 int horaNueva = Integer.parseInt(nuevaHora.substring(0,2)) * 60 + Integer.parseInt(nuevaHora.substring(2,4));
