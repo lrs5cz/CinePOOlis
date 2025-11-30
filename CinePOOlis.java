@@ -4,7 +4,7 @@ import javax.swing.*;
 public class CinePOOlis {
 
     public static void menuPrincipal(GestorDeArchivos gestor) {
-        String[] opcionesUsuario = {"Nuevo registro de cliente", "Ingreso al sistema", "Salir"};
+        String[] opcionesUsuario = {"Nuevo registro de cliente", "Ingreso al sistema","Nuevo registro de empleado", "Salir"};
         int accion = JOptionPane.showOptionDialog(null, "Bienvenido a CinePOOlis",
             "CinePOOlis",
             JOptionPane.DEFAULT_OPTION,
@@ -15,7 +15,9 @@ public class CinePOOlis {
         );
         switch (accion) {
             case 0 -> registroClientes(gestor);
-            case 1 -> accesoSistema(gestor);
+            case 1 -> registroEmpleado(gestor);
+            case 2 -> accesoSistema(gestor);
+
             default -> {
                 SalidaThread salida = new SalidaThread();
                 Thread hiloSalida = new Thread(salida);
@@ -135,6 +137,115 @@ public class CinePOOlis {
         }
     }
 
+    public static void registroEmpleado(GestorDeArchivos gestor) {
+
+    String nombre, apellidoP, apellidoM, numeroCelular, nickname;
+    String correo = "", password = "", turno = "";
+    int edad = 0;
+
+    try {
+
+        nombre = JOptionPane.showInputDialog(null, "Ingrese nombre del empleado",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+        if (nombre == null) return;
+
+        apellidoP = JOptionPane.showInputDialog(null, "Ingrese apellido paterno",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+        if (apellidoP == null) return;
+
+        apellidoM = JOptionPane.showInputDialog(null, "Ingrese apellido materno",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+        if (apellidoM == null) return;
+
+        boolean edadValida = false;
+        while (!edadValida) {
+            try {
+                String inputEdad = JOptionPane.showInputDialog(null, "Ingrese edad",
+                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+                if (inputEdad == null) return;
+
+                edad = Integer.parseInt(inputEdad);
+
+                if (edad < 18 || edad > 99) {
+                    throw new IndexOutOfBoundsException("La edad debe ser entre 18 y 99.");
+                }
+                edadValida = true;
+
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Ingrese solo números.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (IndexOutOfBoundsException e) {
+                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        numeroCelular = JOptionPane.showInputDialog(null, "Ingrese número telefónico",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+        if (numeroCelular == null) return;
+
+        nickname = JOptionPane.showInputDialog(null, "Ingrese nickname de empleado",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+        if (nickname == null) return;
+
+        boolean correoValido = false;
+        while (!correoValido) {
+            try {
+                correo = JOptionPane.showInputDialog(null, "Ingrese correo del empleado",
+                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+                if (correo == null) return;
+
+                if (!(correo.endsWith("@gmail.com") || correo.endsWith("@hotmail.com")
+                        || correo.endsWith("@yahoo.com") || correo.endsWith("@outlook.com"))) {
+                    throw new MailMismatchException("Correo inválido.");
+                }
+
+                correoValido = true;
+
+            } catch (MailMismatchException e) {
+                JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        boolean passValida = false;
+        while (!passValida) {
+            try {
+                password = JOptionPane.showInputDialog(null, "Ingrese contraseña",
+                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+                if (password == null) return;
+
+                String confirm = JOptionPane.showInputDialog(null, "Confirme la contraseña",
+                        "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+                if (confirm == null) return;
+
+                validarPassword(password, confirm);
+                passValida = true;
+
+            } catch (PasswordException e) {
+                JOptionPane.showMessageDialog(null, e.getMessage(), "Contraseña inválida", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        // Aquí se pide el turno
+        turno = JOptionPane.showInputDialog(null,
+                "Ingrese turno del empleado (Matutino / Vespertino / Nocturno):",
+                "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+
+        if (turno == null) return;
+
+        // Crear cuenta y objeto Empleado
+        Cuenta cuenta = new Cuenta(nickname, password, correo);
+        Empleado empleado = new Empleado(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno);
+
+        // Guardar en archivo
+        gestor.guardarUsuariosEnArchivo(empleado);
+
+        JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+
     public static void validarPassword(String password, String confirmacion) throws PasswordException{
         if (!(password.contains("#") || password.contains("@")||
         password.contains("&") || password.contains("!")|| password.contains("%")))
@@ -163,4 +274,5 @@ class MailMismatchException extends Exception {
     public MailMismatchException(String mensaje) {
         super(mensaje);
     }
+
 }
