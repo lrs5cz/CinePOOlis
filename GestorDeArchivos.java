@@ -29,24 +29,19 @@ public class GestorDeArchivos {
             dos.writeUTF(persona.getPasswordCuenta());
             if (persona instanceof Cliente) {
                 Cliente cliente = (Cliente) persona;
-                dos.writeUTF("CLIENTES");
+                dos.writeUTF("CLIENTE");
                 dos.writeUTF(cliente.getTarjetaBancaria());
             } else if (persona instanceof Administrador) {
                 Administrador admin = (Administrador) persona;
-                dos.writeUTF("ADMINISTRADORES");
+                dos.writeUTF("ADMINISTRADOR");
                 dos.writeUTF(admin.getTurno());
                 dos.writeUTF(admin.getDiasTrabajo());
-            } else if (persona instanceof Vendedor) 
-            {
+            } else if (persona instanceof Vendedor) {
                 Vendedor vendedor = (Vendedor) persona;
-                dos.writeUTF("VENDEDORES");
+                dos.writeUTF("VENDEDOR");
                 dos.writeUTF(vendedor.getTurno());
                 dos.writeUTF(vendedor.getDiaDescanso());
-            } else if (persona instanceof Empleado) {//esto agregue yo nat 
-                Empleado emp = (Empleado) persona;
-                dos.writeUTF("EMPLEADO");
-                dos.writeUTF(emp.getTurno());
-            }
+            } 
         }
     }
 
@@ -73,12 +68,12 @@ public class GestorDeArchivos {
                     String tipoUsuario = dis.readUTF().toUpperCase();
                     // Creamos las perosnas según su categoría
                     switch(tipoUsuario) { 
-                        case "CLIENTES" -> {
+                        case "CLIENTE" -> {
                             String tarjetaBancaria = dis.readUTF();
                             Cliente cliente = new Cliente(nombre, apellidoP, apellidoM, edad, celular, cuenta, tarjetaBancaria);
                             usuarios.add(cliente);
                         }
-                        case "ADMINISTRADORES" -> {
+                        case "ADMINISTRADOR" -> {
                             String turno = dis.readUTF();
                             String diasTrabajo = dis.readUTF();
                             Administrador admin = new Administrador(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno ,diasTrabajo);
@@ -430,7 +425,7 @@ public class GestorDeArchivos {
     }
 
     public String[][] cargarAsientosVIP(int numFilas, int numColumnas) {
-        String[][] asientos = new String[numFilas][numColumnas];
+        String[][] asientosVIP = new String[numFilas][numColumnas];
         try (BufferedReader reader = new BufferedReader(new FileReader("asientosVIP.txt"))) {
             String linea;
             int fila = 0;
@@ -442,15 +437,14 @@ public class GestorDeArchivos {
                 // Verifica que la fila y la columna sean las esperadas
                 if (fila < numFilas && datosFila.length == numColumnas) {
                     for (int columna = 0; columna < numColumnas; columna++) {
-                        asientos[fila][columna] = datosFila[columna].trim();
+                        asientosVIP[fila][columna] = datosFila[columna].trim();
                     }
                     fila++;
                 } else {
-                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
                     return null; // Retorna null o el array vacío si hay un error de formato
                 }
             }
-            return asientos;
+            return asientosVIP;
 
         } catch (IOException e) {
             return null;
@@ -482,7 +476,6 @@ public class GestorDeArchivos {
             int fila = 0;
 
             while ((linea = reader.readLine()) != null) {
-                // Divide la línea por el delimitador (la coma)
                 String[] datosFila = linea.split(",");
                 
                 // Verifica que la fila y la columna sean las esperadas
@@ -492,8 +485,7 @@ public class GestorDeArchivos {
                     }
                     fila++;
                 } else {
-                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
-                    return null; // Retorna null o el array vacío si hay un error de formato
+                    return null; 
                 }
             }
             return asientos;
@@ -503,4 +495,3 @@ public class GestorDeArchivos {
         }
     }
 }
-
