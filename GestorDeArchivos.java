@@ -36,11 +36,16 @@ public class GestorDeArchivos {
                 dos.writeUTF("ADMINISTRADORES");
                 dos.writeUTF(admin.getTurno());
                 dos.writeUTF(admin.getDiasTrabajo());
-            } else if (persona instanceof Vendedor) {
+            } else if (persona instanceof Vendedor) 
+            {
                 Vendedor vendedor = (Vendedor) persona;
                 dos.writeUTF("VENDEDORES");
                 dos.writeUTF(vendedor.getTurno());
                 dos.writeUTF(vendedor.getDiaDescanso());
+            } else if (persona instanceof Empleado) {//esto agregue yo nat 
+                Empleado emp = (Empleado) persona;
+                dos.writeUTF("EMPLEADO");
+                dos.writeUTF(emp.getTurno());
             }
         }
     }
@@ -85,6 +90,12 @@ public class GestorDeArchivos {
                             Vendedor vendedor = new Vendedor(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno, diaDescanso);
                             usuarios.add(vendedor);
                         }
+                        case "EMPLEADO" -> {//lo agregue yo nat 
+                            String turno = dis.readUTF();
+                            Persona emp = new Empleado(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno);
+                            usuarios.add(emp);
+                        }
+
                     }
                 } catch (EOFException e) {
                     break;
@@ -492,3 +503,4 @@ public class GestorDeArchivos {
         }
     }
 }
+
