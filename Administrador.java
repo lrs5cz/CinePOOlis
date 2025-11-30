@@ -323,11 +323,11 @@ public class Administrador extends Empleado {
             }
 
             case 1 -> {
-                String area = JOptionPane.showInputDialog(null, "Ingrese el área del Vendedor:");
-                if (area == null) return;
+                String area = JOptionPane.showInputDialog(null, "Ingrese dia de descanso del Vendedor:");
+                if (diasTrabajo == null) return;
 
                 empleado = new Vendedor(
-                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, area
+                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, diasTrabajo
                 );
             }
 
@@ -336,19 +336,9 @@ public class Administrador extends Empleado {
                 return;
             }
         }
-
-        // Guardar en sistemas
-        usuariosEnSistema.add(personaRegistrada);
-        gestor.guardarUsuariosEnArchivo(personaRegistrada);
-
-        JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-
-            // Guardar en archivo
+              // Guardar en archivo
             gestor.guardarUsuariosEnArchivo(empleado);
+            //usuariosEnSistema.add(personaRegistrada);
 
             JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
 
@@ -357,4 +347,5 @@ public class Administrador extends Empleado {
         }
     }
 }
+
 
