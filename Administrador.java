@@ -323,7 +323,7 @@ public class Administrador extends Empleado {
             }
 
             case 1 -> {
-                String area = JOptionPane.showInputDialog(null, "Ingrese dia de descanso del Vendedor:");
+                String diasTrabajo = JOptionPane.showInputDialog(null, "Ingrese dia de trabajo del Vendedor:");
                 if (diasTrabajo == null) return;
 
                 empleado = new Vendedor(
@@ -347,5 +347,6 @@ public class Administrador extends Empleado {
         }
     }
 }
+
 
 
