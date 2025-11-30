@@ -32,10 +32,16 @@ public class Cliente extends Persona {
     // Métodos
 
     // Método para mostrar el menú del cliente
-    public static void menuCliente (GestorDeArchivos gestor) {
+    public static void menuCliente (GestorDeArchivos gestor, Cliente cliente) {
         try {
+            // Cargamos archivos
+            List<Persona> usuarios = gestor.cargarUsuarios();
             List<Pelicula> cartelera = gestor.cargarPeliculas();
+            List<Funcion> funciones = gestor.mostrarFunciones(cartelera);
+            List<Boleto> boletos = gestor.cargarBoletosEnArchivo(cartelera);
+            List<String> ordenes = gestor.cargarOrdenesDeUsuario(cliente);
             String[] opciones = {"Ver cartelera", "Comprar boletos", "Comprar en dulcería", "Notificaciones", "Cerrar Sesión"};
+            Validaciones v = new Validaciones();
             int opcion = JOptionPane.showOptionDialog(null, "Menú del cliente.\n\n¿Qué acción desea realizar?", "CinePOOlis",
             JOptionPane.PLAIN_MESSAGE,  JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
 
@@ -44,21 +50,17 @@ public class Cliente extends Persona {
                     verCartelera(cartelera);
                 }
                 case 1 -> {
-                    List<Funcion> funciones = gestor.mostrarFunciones(cartelera);
                     comprarBoletos(cartelera, funciones, gestor);
                 }
                 case 2 -> {
-                    // List<Combo> ordenes = new ArrayList<>();
-                    // Orden orden = new Orden(ordenes);
-                    // Solucionar lo del cliente en comprarDulceria
-                    // comprarDulceria(orden, gestor, cliente); (Recibe este cliente como parámetro pero no puede instanciarlo por ser estático)
+                    List<Combo> comanda = new ArrayList<>();
+                    Orden orden = new Orden(comanda);
+                    comprarDulceria(orden, gestor, cliente);
                 }
                 case 3 -> {
-                    // También recibe cliente como parámetro
-                    // Cargamos las listas
-                    // revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
+                    revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
                 }
-                default -> CinePOOlis.menuPrincipal(gestor);
+                default -> CinePOOlis.menuPrincipal(gestor, v, usuarios);
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -738,7 +740,7 @@ public class Cliente extends Persona {
                     JOptionPane.showMessageDialog(null, "Error al revisar notificaciones: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            default -> menuCliente(gestor);
+            default -> menuCliente(gestor, cliente);
         }
     }
 
