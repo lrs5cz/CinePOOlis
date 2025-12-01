@@ -157,7 +157,7 @@ public class Administrador extends Empleado {
     public void mostrarMenuAdministrador() throws IOException{
         int opcionint = -1;
         do { 
-            JOptionPane.showMessageDialog(null, "--- MENU ADMINISTRADOR ---\n1. Agregar Pelicula a Cartelera\n2. Agregar Funcion\n3. Salir","**MENU**",JOptionPane.PLAIN_MESSAGE);
+            JOptionPane.showMessageDialog(null, "--- MENU ADMINISTRADOR ---\n1. Agregar Pelicula a Cartelera\n2. Agregar Funcion\n3. Registrar Empleado\n4. Películas para las que el cliente compró boletos\n5. Salir","**MENU**",JOptionPane.PLAIN_MESSAGE);
             String opcion = JOptionPane.showInputDialog("Ingrese la opcion deseada");
             if(opcion == null){
                 JOptionPane.showMessageDialog(null, "Saliendo del menu...");
@@ -174,7 +174,8 @@ public class Administrador extends Empleado {
             switch (opcionint) {
                 case 1 -> agregarPeliculaACartelera();
                 case 2 -> agregarFuncion();
-                case 3 -> JOptionPane.showMessageDialog(null, "Saliendo del menu...");
+                case 3 -> registroEmpleado(null, null, null);
+                case 4 -> JOptionPane.showMessageDialog(null, "Saliendo del menu...");
                 default -> JOptionPane.showMessageDialog(null, "Opcion no valida, intente de nuevo.");
             }
             //agregarFuncion(funciones, cartelera, opcion)
@@ -347,6 +348,10 @@ public class Administrador extends Empleado {
         }
     }
 }
+
+
+
+
 
 
 
