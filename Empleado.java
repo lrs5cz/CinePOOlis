@@ -4,7 +4,7 @@ public class Empleado extends Persona {
    
 
     // Constructor
-    public Empleado(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta, String turno,) {
+    public Empleado(String nombre, String apellidoP, String apellidoM, int edad, String numeroCelular, Cuenta cuenta, String turno) {
         super(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta);
         this.turno = turno;
        
@@ -21,4 +21,5 @@ public class Empleado extends Persona {
     
 
 }
+
 
