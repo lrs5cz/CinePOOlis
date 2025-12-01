@@ -31,9 +31,27 @@ public class Validaciones {
     }
 
     // Número de celular
-    public boolean existeNumeroCelular(List<Persona> usuarios, String numeroCelular) {
-        for (Persona p : usuarios) {
-            if (p.getNumeroCelular().equals(numeroCelular)) {
+    public boolean existeNumeroCliente(List<Cliente> cliente, String numeroCelular) {
+        for (Cliente c : cliente) {
+            if (c.getNumeroCelular().equals(numeroCelular)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeNumeroAdmin(List<Administrador> admininstradores, String numeroCelular) {
+        for (Administrador a : admininstradores) {
+            if (a.getNumeroCelular().equals(numeroCelular)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeNumeroVendedor(List<Vendedor> vendedores, String numeroCelular) {
+        for (Vendedor v : vendedores) {
+            if (v.getNumeroCelular().equals(numeroCelular)) {
                 return true;
             }
         }
@@ -41,9 +59,27 @@ public class Validaciones {
     }
 
     // Nickname
-    public boolean existeNickname(List<Persona> usuarios, String nickname) {
-        for (Persona p : usuarios) {
-            if (p.getNicknameCuenta().equals(nickname)) {
+    public boolean existeNicknameCliente(List<Cliente> clientes, String nickname) {
+        for (Cliente c : clientes) {
+            if (c.getNicknameCuenta().equals(nickname)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeNicknameAdmin(List<Administrador> administradores, String nickname) {
+        for (Administrador a : administradores) {
+            if (a.getNicknameCuenta().equals(nickname)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeNicknameVendedor(List<Vendedor> vendedores, String nickname) {
+        for (Vendedor v : vendedores) {
+            if (v.getNicknameCuenta().equals(nickname)) {
                 return true;
             }
         }
@@ -51,9 +87,28 @@ public class Validaciones {
     }
 
     // Correo Electrónico
-    public boolean existeCorreo(List<Persona> usuarios, String correo) {
-        for (Persona p : usuarios) {
-            if (p.getCorreoCuenta().equals(correo)) {
+
+    public boolean existeCorreoCliente(List<Cliente> clientes, String correo) {
+        for (Cliente c : clientes) {
+            if (c.getCorreoCuenta().equals(correo)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeCorreoAdmin(List<Administrador> administradores, String correo) {
+        for (Administrador a : administradores) {
+            if (a.getCorreoCuenta().equals(correo)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean existeCorreoVendedor(List<Vendedor> vendedores, String correo) {
+        for (Vendedor v : vendedores) {
+            if (v.getCorreoCuenta().equals(correo)) {
                 return true;
             }
         }
@@ -61,9 +116,8 @@ public class Validaciones {
     }
 
     // Tarjeta Bancaria
-    public boolean existeTarjeta(List<Persona> usuarios, String tarjeta) {
-        for (Persona p : usuarios) {
-            Cliente c = (Cliente) p;
+    public boolean existeTarjeta(List<Cliente> clientes, String tarjeta) {
+        for (Cliente c : clientes) {
             if (c.getTarjetaBancaria().equals(tarjeta)) {
                 return true;
             }
