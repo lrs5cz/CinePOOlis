@@ -74,7 +74,7 @@ public class Cliente extends Persona {
                         verCartelera(cartelera);
                     }
                     case 1 -> {
-                        comprarBoletos(cartelera, funciones, gestor);
+                        comprarBoletos(cartelera, funciones, gestor, cliente);
                     }
                     case 2 -> {
                         List<Combo> comanda = new ArrayList<>();
@@ -137,7 +137,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar boletos (Retorna la clave de los boletos)
-    public static void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, GestorDeArchivos gestor) {
+    public static void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, GestorDeArchivos gestor, Cliente cliente) {
         try {
             List<Boleto> boletos = new ArrayList<>();
             do {
@@ -147,7 +147,7 @@ public class Cliente extends Persona {
                     if (funcionSeleccionada == null) break;
                     
                     // Seleccionamos los asientos
-                    boletos = seleccionarAsiento(funcionSeleccionada, gestor);
+                    boletos = seleccionarAsiento(funcionSeleccionada, gestor, cliente);
                     
                     if (boletos.isEmpty()) {
                         JOptionPane.showMessageDialog(null, "No se compraron boletos.", "Información", JOptionPane.INFORMATION_MESSAGE);
@@ -265,7 +265,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar asiento
-    public static List<Boleto> seleccionarAsiento(Funcion funcion, GestorDeArchivos gestor) {
+    public static List<Boleto> seleccionarAsiento(Funcion funcion, GestorDeArchivos gestor, Cliente cliente) {
         String[][] asientos = gestor.cargarAsientos(funcion);
 
         if (asientos == null) {
@@ -444,7 +444,7 @@ public class Cliente extends Persona {
 
                 // Crear los boletos y agregarlos
                 for (String asiento : asientosTemporales) {
-                    Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), asiento);
+                    Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), asiento, cliente.getNicknameCuenta());
                     boletosComprados.add(boleto);
                 }
                 gestor.guardarAsientos(funcion, asientos);
