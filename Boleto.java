@@ -8,6 +8,7 @@ public class Boleto extends Funcion {
     public Boleto(String fecha, String hora, String sala, Pelicula pelicula, String asiento) {
         super(fecha, hora, sala, pelicula);
         this.asiento = asiento;
+        this.nicknameComprador= nicknameComprador;
         if ((sala.toLowerCase()).equals("sala vip")) {
             this.precio = 190;
         } else { // Salas A y B
@@ -45,4 +46,5 @@ public class Boleto extends Funcion {
     }
 
 }
+
 
