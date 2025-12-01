@@ -5,7 +5,9 @@ import javax.swing.JOptionPane;
 public class GestorDeArchivos {
 
     // Se crea el archivo de peliculas
-    private final File USUARIOS_REGISTRADOS = new File("usuariosRegistrados.dat"); 
+    private final File CLIENTES_REGISTRADOS = new File("clientesRegistrados.dat"); 
+    private final File ADMIN_REGISTRADOS = new File("adminRegistrados.dat");
+    private final File VENDEDORES_REGISTRADOS = new File("vendedoresRegistrados.dat");
     private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
     private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
@@ -13,44 +15,40 @@ public class GestorDeArchivos {
     private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
     private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para leer si una orden ya está lista o aún no
 
-    // Método para registrar usuarios en el archivo "usuariosRegistrados.dat"
-    public void guardarUsuariosEnArchivo(Persona persona) throws IOException {
-        try (
-            FileOutputStream fos = new FileOutputStream(USUARIOS_REGISTRADOS, true);
-            DataOutputStream dos = new DataOutputStream(fos)
-        ){
-            dos.writeUTF(persona.getNombre());
-            dos.writeUTF(persona.getApellidoP());
-            dos.writeUTF(persona.getApellidoM());
-            dos.writeInt(persona.getEdad());
-            dos.writeUTF(persona.getNumeroCelular());
-            dos.writeUTF(persona.getNicknameCuenta());
-            dos.writeUTF(persona.getCorreoCuenta());
-            dos.writeUTF(persona.getPasswordCuenta());
-            if (persona instanceof Cliente) {
-                Cliente cliente = (Cliente) persona;
-                dos.writeUTF("CLIENTE");
-                dos.writeUTF(cliente.getTarjetaBancaria());
-            } else if (persona instanceof Administrador) {
-                Administrador admin = (Administrador) persona;
-                dos.writeUTF("ADMINISTRADOR");
-                dos.writeUTF(admin.getTurno());
-                dos.writeUTF(admin.getDiasTrabajo());
-            } else if (persona instanceof Vendedor) {
-                Vendedor vendedor = (Vendedor) persona;
-                dos.writeUTF("VENDEDOR");
-                dos.writeUTF(vendedor.getTurno());
-                dos.writeUTF(vendedor.getDiaDescanso());
-            } 
+    public void guardarUsuarios (Persona persona) throws IOException {
+        if (persona instanceof Cliente) {
+            Cliente cliente = (Cliente) persona;
+            guardarClienteEnArchivo(cliente);
+        } else if (persona instanceof Administrador) {
+            Administrador admin = (Administrador) persona;
+            guardarAdminEnArchivo(admin);
+        } else if (persona instanceof Vendedor) {
+            Vendedor vendedor = (Vendedor) persona;
+            guardarVendedorEnArchivo(vendedor);
         }
     }
 
-
-    // Método para acceder al registro de los usuarios
-    public List<Persona> cargarUsuarios() throws IOException {
-        List<Persona> usuarios = new ArrayList<>();
+    public void guardarClienteEnArchivo(Cliente cliente) throws IOException {
         try (
-        FileInputStream fis = new FileInputStream(USUARIOS_REGISTRADOS);
+            FileOutputStream fos = new FileOutputStream(CLIENTES_REGISTRADOS, true);
+            DataOutputStream dos = new DataOutputStream(fos)
+        ){
+            dos.writeUTF(cliente.getNombre());
+            dos.writeUTF(cliente.getApellidoP());
+            dos.writeUTF(cliente.getApellidoM());
+            dos.writeInt(cliente.getEdad());
+            dos.writeUTF(cliente.getNumeroCelular());
+            dos.writeUTF(cliente.getNicknameCuenta());
+            dos.writeUTF(cliente.getCorreoCuenta());
+            dos.writeUTF(cliente.getPasswordCuenta());
+            dos.writeUTF(cliente.getTarjetaBancaria());
+        }
+    }
+
+    public List<Cliente> cargarClientes() throws IOException {
+        List<Cliente> clientes = new ArrayList<>();
+        try (
+        FileInputStream fis = new FileInputStream(CLIENTES_REGISTRADOS);
         DataInputStream dis = new DataInputStream(fis)
         ) {
             while (true) {
@@ -65,41 +63,113 @@ public class GestorDeArchivos {
                     String correo = dis.readUTF();
                     String password = dis.readUTF();
                     Cuenta cuenta = new Cuenta(nickname, password, correo);
-                    String tipoUsuario = dis.readUTF().toUpperCase();
-                    // Creamos las perosnas según su categoría
-                    switch(tipoUsuario) { 
-                        case "CLIENTE" -> {
-                            String tarjetaBancaria = dis.readUTF();
-                            Cliente cliente = new Cliente(nombre, apellidoP, apellidoM, edad, celular, cuenta, tarjetaBancaria);
-                            usuarios.add(cliente);
-                        }
-                        case "ADMINISTRADOR" -> {
-                            String turno = dis.readUTF();
-                            String diasTrabajo = dis.readUTF();
-                            Administrador admin = new Administrador(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno ,diasTrabajo);
-                            usuarios.add(admin);
-                        }
-                        case "VENDEDOR" -> {
-                            String turno = dis.readUTF();
-                            String diaDescanso = dis.readUTF();
-                            Vendedor vendedor = new Vendedor(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno, diaDescanso);
-                            usuarios.add(vendedor);
-                        }
-                        case "EMPLEADO" -> {//lo agregue yo nat 
-                            String turno = dis.readUTF();
-                            Persona emp = new Empleado(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno);
-                            usuarios.add(emp);
-                        }
-
-                    }
+                    String tarjetaBancaria = dis.readUTF();
+                    Cliente cliente = new Cliente(nombre, apellidoP, apellidoM, edad, celular, cuenta, tarjetaBancaria);
+                    clientes.add(cliente);
                 } catch (EOFException e) {
                     break;
                 }
             }
         }
-        return usuarios;
+        return clientes;
     } 
-    
+
+    public void guardarAdminEnArchivo(Administrador admin) throws IOException {
+        try (
+            FileOutputStream fos = new FileOutputStream(ADMIN_REGISTRADOS, true);
+            DataOutputStream dos = new DataOutputStream(fos)
+        ){
+            dos.writeUTF(admin.getNombre());
+            dos.writeUTF(admin.getApellidoP());
+            dos.writeUTF(admin.getApellidoM());
+            dos.writeInt(admin.getEdad());
+            dos.writeUTF(admin.getNumeroCelular());
+            dos.writeUTF(admin.getNicknameCuenta());
+            dos.writeUTF(admin.getCorreoCuenta());
+            dos.writeUTF(admin.getPasswordCuenta());
+            dos.writeUTF(admin.getTurno());
+            dos.writeUTF(admin.getDiasTrabajo());
+        }
+    }
+
+    public List<Administrador> cargarAdmin() throws IOException {
+        List<Administrador> admins = new ArrayList<>();
+        try (
+        FileInputStream fis = new FileInputStream(ADMIN_REGISTRADOS);
+        DataInputStream dis = new DataInputStream(fis)
+        ) {
+            while (true) {
+                try {
+                    // Leemos los datos
+                    String nombre = dis.readUTF();
+                    String apellidoP = dis.readUTF();
+                    String apellidoM = dis.readUTF();
+                    int edad = dis.readInt();
+                    String celular = dis.readUTF();
+                    String nickname = dis.readUTF();
+                    String correo = dis.readUTF();
+                    String password = dis.readUTF();
+                    Cuenta cuenta = new Cuenta(nickname, password, correo);
+                    String turno = dis.readUTF();
+                    String diasTrabajo = dis.readUTF();
+                    Administrador admin = new Administrador(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno, diasTrabajo);
+                    admins.add(admin);
+                } catch (EOFException e) {
+                    break;
+                }
+            }
+        }
+        return admins;
+    }
+
+    public void guardarVendedorEnArchivo(Vendedor vendedor) throws IOException {
+        try (
+            FileOutputStream fos = new FileOutputStream(VENDEDORES_REGISTRADOS, true);
+            DataOutputStream dos = new DataOutputStream(fos)
+        ){
+            dos.writeUTF(vendedor.getNombre());
+            dos.writeUTF(vendedor.getApellidoP());
+            dos.writeUTF(vendedor.getApellidoM());
+            dos.writeInt(vendedor.getEdad());
+            dos.writeUTF(vendedor.getNumeroCelular());
+            dos.writeUTF(vendedor.getNicknameCuenta());
+            dos.writeUTF(vendedor.getCorreoCuenta());
+            dos.writeUTF(vendedor.getPasswordCuenta());
+            dos.writeUTF(vendedor.getTurno());
+            dos.writeUTF(vendedor.getDiaDescanso());
+        }
+    }
+
+    public List<Vendedor> cargarVendedores() throws IOException {
+        List<Vendedor> vendedores = new ArrayList<>();
+        try (
+        FileInputStream fis = new FileInputStream(VENDEDORES_REGISTRADOS);
+        DataInputStream dis = new DataInputStream(fis)
+        ) {
+            while (true) {
+                try {
+                    // Leemos los datos
+                    String nombre = dis.readUTF();
+                    String apellidoP = dis.readUTF();
+                    String apellidoM = dis.readUTF();
+                    int edad = dis.readInt();
+                    String celular = dis.readUTF();
+                    String nickname = dis.readUTF();
+                    String correo = dis.readUTF();
+                    String password = dis.readUTF();
+                    Cuenta cuenta = new Cuenta(nickname, password, correo);
+                    String turno = dis.readUTF();
+                    String diaDescanso = dis.readUTF();
+                    Vendedor vendedor = new Vendedor(nombre, apellidoP, apellidoM, edad, celular, cuenta, turno, diaDescanso);
+                    vendedores.add(vendedor);
+                } catch (EOFException e) {
+                    break;
+                }
+            }
+        }
+        return vendedores;
+    } 
+
     // Método para guardar peliculas en el archivo "peliculasAgregadas.txt"
     public void guardarPeliculaEnArchivo(Pelicula unaPelicula) throws IOException{ //La excepcion se maneja en la interfaz grafica 
         FileWriter objetoFileWriter = new FileWriter(ARCHIVO_PELICULAS,true);
@@ -223,7 +293,7 @@ public class GestorDeArchivos {
             String fecha = partes[1];
             String hora = partes[2];
             String sala = partes[3];
-            String asiento = partes[5];
+            String asiento = partes[4];
             Pelicula pelicula = buscarPeliculaPorId(cartelera, idPelicula);
             if(partes.length == 5) {
                 Boleto boletoLeido = new Boleto(fecha, hora, sala, pelicula, asiento);
@@ -386,7 +456,7 @@ public class GestorDeArchivos {
 
             while ((linea = reader.readLine()) != null) {
                 // Divide la línea por el delimitador (la coma)
-                String[] datosFila = linea.split(",");
+                String[] datosFila = linea.split("\t");
                 
                 // Verifica que la fila y la columna sean las esperadas
                 if (fila < numFilas && datosFila.length == numColumnas) {
@@ -431,8 +501,8 @@ public class GestorDeArchivos {
             int fila = 0;
 
             while ((linea = reader.readLine()) != null) {
-                // Divide la línea por el delimitador (la coma)
-                String[] datosFila = linea.split(",");
+                // Divide la línea por el delimitador
+                String[] datosFila = linea.split("\t");
                 
                 // Verifica que la fila y la columna sean las esperadas
                 if (fila < numFilas && datosFila.length == numColumnas) {
@@ -476,7 +546,7 @@ public class GestorDeArchivos {
             int fila = 0;
 
             while ((linea = reader.readLine()) != null) {
-                String[] datosFila = linea.split(",");
+                String[] datosFila = linea.split("\t");
                 
                 // Verifica que la fila y la columna sean las esperadas
                 if (fila < numFilas && datosFila.length == numColumnas) {
