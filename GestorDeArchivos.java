@@ -295,9 +295,10 @@ public class GestorDeArchivos {
             String hora = partes[2];
             String sala = partes[3];
             String asiento = partes[4];
+            String nickname = partes[5];
             Pelicula pelicula = buscarPeliculaPorId(cartelera, idPelicula);
-            if(partes.length == 5) {
-                Boleto boletoLeido = new Boleto(fecha, hora, sala, pelicula, asiento);
+            if(partes.length == 6) {
+                Boleto boletoLeido = new Boleto(fecha, hora, sala, pelicula, asiento, nickname);
                 listaDeBoletosDelArchivo.add(boletoLeido);
             }
         }
