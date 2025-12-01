@@ -189,15 +189,26 @@ public class Cliente extends Persona {
         scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
 
         JOptionPane.showMessageDialog(null, scrollPane, "Funciones Disponibles", JOptionPane.INFORMATION_MESSAGE);
-        int seleccion = 0;
+        int seleccion = -1;
         boolean seleccionValida = false;
         do {
             try {
-                seleccion = Integer.parseInt(JOptionPane.showInputDialog(null, 
-                "Ingrese el índice de la función que quieres asistir", "0"));
-                // Ajustamos el índice
-                seleccion = seleccion - 1;
-                seleccionValida = true;
+                String input = JOptionPane.showInputDialog(null, 
+                    "Ingrese el índice de la función que quieres asistir", "1");
+                
+                if (input == null) return null; 
+
+                seleccion = Integer.parseInt(input);
+
+                if (seleccion > 0 && seleccion <= funciones.size()) {
+                    seleccion = seleccion - 1; // Ajustamos a índice base 0
+                    seleccionValida = true;
+                } else {
+                    JOptionPane.showMessageDialog(null, 
+                    "Número de función fuera del rango. Ingrese un número entre 1 y " + funciones.size(), 
+                    "Error de Rango", JOptionPane.ERROR_MESSAGE);
+                }
+                
             } catch (NumberFormatException nfe) {
                 JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception e) {
@@ -614,6 +625,11 @@ public class Cliente extends Persona {
             case 0 -> { 
                 try {
                     List<Funcion> funcionesConBoleto = verificarFuncion(funcionesCargadas, boletosCargados);
+                    if(funcionesConBoleto.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "No tienes boletos comprados para funciones activas.", "Notificaciones de funciones", JOptionPane.INFORMATION_MESSAGE);
+                        break;
+                    }
+
                     StringBuilder funcionesStr = new StringBuilder("\nFunciones:");
                     int i = 1;
                     for (Funcion f : funcionesConBoleto) {
@@ -622,17 +638,22 @@ public class Cliente extends Persona {
                         i++;
                     }
 
-                    seleccion = Integer.parseInt(JOptionPane.showInputDialog(null,
-                        "Ingrese la función que quiere ver a detalle: " + funcionesStr, "1"));
-
-                    Funcion funcionSelec = new Funcion(null, null, null, null);
-                    
-                    for (i = 0; i < funcionesConBoleto.size(); i++) {
-                        seleccion = seleccion - 1;
-                        if(i == seleccion) {
-                            funcionSelec = funcionesConBoleto.get(i);
-                        }
+                    String inputSeleccion = JOptionPane.showInputDialog(null,
+                    "Ingrese el número de la función que quiere ver a detalle: " + funcionesStr, "1");
+                            
+                    if (inputSeleccion == null) { 
+                        revisarNotificaciones(gestor, cliente, funcionesCargadas, boletosCargados, ordenes, cartelera); 
+                        return;
                     }
+
+                    int seleccionUno = Integer.parseInt(inputSeleccion);
+
+                    if (seleccionUno <= 0 || seleccionUno > funcionesConBoleto.size()) {
+                        JOptionPane.showMessageDialog(null, "No existe la función " + seleccionUno + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                        break;
+                    }
+
+                    Funcion funcionSelec = funcionesConBoleto.get(seleccionUno - 1);
 
                     List<Boleto> boletosFuncion = gestor.cargarBoletosPorFuncion(boletosCargados, funcionSelec);
 
@@ -648,97 +669,101 @@ public class Cliente extends Persona {
                 }
             }
             case 1 -> { // Revisar notificaciones de dulcería
-                try {
-                    String idCliente = cliente.generarIdNombre();
-                    
-                    // Filtrar las órdenes compradas por este cliente.
-                    List<String> ordenesDelCliente = ordenes.stream()
-                                                    .filter(o -> o.startsWith(idCliente + "|"))
-                                                    .toList();
-
-                    // Cargar las órdenes que ya fueron terminadas por el ThreadIntegrador
-                    List<String> ordenesTerminadas = gestor.cargarHistorialDeDulceria(); 
-                    
-                    if (ordenesDelCliente.isEmpty()) {
-                        JOptionPane.showMessageDialog(null, "No tienes órdenes de dulcería compradas.", "Notificaciones de Dulcería", JOptionPane.INFORMATION_MESSAGE);
-                        break;
-                    }
-                    
-                    // Mostrar la lista numerada al cliente
-                    StringBuilder ordenesStr = new StringBuilder("\nÓrdenes de " + cliente.getNombre() + "\n");
-                    for (int i = 0; i < ordenesDelCliente.size(); i++) {
-                        // Muestra las claves para que el cliente seleccione.
-                        ordenesStr.append(i + 1).append(". ").append(ordenesDelCliente.get(i)).append("\n");
-                    }
-
-                    // Pedir al cliente que seleccione una orden.
-                    String inputSeleccion = JOptionPane.showInputDialog(null,
-                        "Órdenes de Dulcería: \n" + ordenesStr.toString() + 
-                        "\nIngrese el número de la orden que desea verificar:", "1");
-                    
-                    if (inputSeleccion == null) break; // Si cancela
-
-                    int indiceSeleccionado = Integer.parseInt(inputSeleccion) - 1;
-                    
-                    if (indiceSeleccionado < 0 || indiceSeleccionado >= ordenesDelCliente.size()) {
-                        JOptionPane.showMessageDialog(null, "Selección inválida.", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    
-                    String claveSeleccionada = ordenesDelCliente.get(indiceSeleccionado);
-                    
-                    if (ordenesTerminadas.contains(claveSeleccionada)) {
-                    String idVendedorLog = cliente.generarIdNombre(); 
-
-                    String logDetallado = gestor.buscarOrdenEnHistorialVendedor(claveSeleccionada, idVendedorLog);
-                    
-                    String nombreVendedor;
-                    
-                    if (logDetallado != null) {
-                        // Cargamos todos los usuarios para encontrar el nombre del vendedor
-                        List<Persona> usuarios = gestor.cargarUsuarios();
+                boolean reintentar = false;
+                do {
+                    try {
+                        String idCliente = cliente.generarIdNombre();
                         
-                        // Buscamos el objeto Vendedor 
-                        nombreVendedor = usuarios.stream()
-                            .filter(p -> p instanceof Vendedor)
-                            .filter(v -> ((Vendedor)v).generarIdNombre().equals(idVendedorLog))
-                            .map(Persona::getNombre)
-                            .findFirst()
-                            .orElse("Vendedor Desconocido"); // Usar fallback
+                        // Filtrar las órdenes compradas por este cliente.
+                        List<String> ordenesDelCliente = ordenes.stream()
+                                                        .filter(o -> o.startsWith(idCliente + "|"))
+                                                        .toList();
 
-                    } else {
-                        // Fallback si no se puede leer el log del vendedor (problema de archivo)
-                        nombreVendedor = "Vendedor Temporal"; 
-                    }
-
-                    // Formato de la clave: ID|AAAAMMDD|hhmm
-                    String[] partesClave = claveSeleccionada.split("\\|");
-                    String fechaHoraTerminacionStr = partesClave[1] + ":" + partesClave[2]; // AAAAMMDD:hhmm
-
-                    String mensajeListo = String.format(
-                        "Hola, soy %s. Ya está lista tu orden de dulcería. Puedes pasar a recogerla en la fila de dulcería para ventas de la app. %s",
-                        nombreVendedor, fechaHoraTerminacionStr
-                    );
-
-                    gestor.guardarMensajeNotificacion(mensajeListo);
+                        // Cargar las órdenes que ya fueron terminadas por el ThreadIntegrador
+                        List<String> ordenesTerminadas = gestor.cargarHistorialDeDulceria(); 
                         
-                    } else {
-                        // Orden en progreso (La clave existe en 'ordenesDelCliente' pero no en 'ordenesTerminadas').
-                        String mensajeProgreso = "Estamos trabajando arduamente para que tus alimentos sean deliciosos. Por favor, espera un poco más =D";
-                        gestor.guardarMensajeNotificacion(mensajeProgreso);
-                    }
-                    
-                    // 5. Mostrar el mensaje al cliente leyendo el archivo
-                    String mensajeFinal = gestor.leerMensajeNotificacion();
-                    JOptionPane.showMessageDialog(null, mensajeFinal, "Estado de la Orden: " + claveSeleccionada, JOptionPane.INFORMATION_MESSAGE);
+                        if (ordenesDelCliente.isEmpty()) {
+                            JOptionPane.showMessageDialog(null, "No tienes órdenes de dulcería compradas.", "Notificaciones de Dulcería", JOptionPane.INFORMATION_MESSAGE);
+                            break;
+                        }
+                        
+                        // Mostrar la lista numerada al cliente
+                        StringBuilder ordenesStr = new StringBuilder("\nÓrdenes de " + cliente.getNombre() + "\n");
+                        for (int i = 0; i < ordenesDelCliente.size(); i++) {
+                            // Muestra las claves para que el cliente seleccione.
+                            ordenesStr.append(i + 1).append(". ").append(ordenesDelCliente.get(i)).append("\n");
+                        }
 
-                } catch (NumberFormatException nfe) {
-                    JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(null, "Error al acceder a los archivos de órdenes: " + e.getMessage(), "Error I/O", JOptionPane.ERROR_MESSAGE);
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(null, "Error al revisar notificaciones: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
-                }
+                        // Pedir al cliente que seleccione una orden.
+                        String inputSeleccion = JOptionPane.showInputDialog(null,
+                            "Órdenes de Dulcería: \n" + ordenesStr.toString() + 
+                            "\nIngrese el número de la orden que desea verificar:", "1");
+                        
+                        if (inputSeleccion == null) break; // Si cancela
+
+                        int indiceSeleccionado = Integer.parseInt(inputSeleccion) - 1;
+                        
+                        if (indiceSeleccionado < 0 || indiceSeleccionado > ordenesDelCliente.size()) {
+                            JOptionPane.showMessageDialog(null, "Selección inválida.", "Error", JOptionPane.ERROR_MESSAGE);
+                            reintentar = true;
+                            continue;
+                        }
+                        
+                        String claveSeleccionada = ordenesDelCliente.get(indiceSeleccionado);
+                        
+                        if (ordenesTerminadas.contains(claveSeleccionada)) {
+                        String idVendedorLog = cliente.generarIdNombre(); 
+
+                        String logDetallado = gestor.buscarOrdenEnHistorialVendedor(claveSeleccionada, idVendedorLog);
+                        
+                        String nombreVendedor;
+                        
+                        if (logDetallado != null) {
+                            // Cargamos todos los usuarios para encontrar el nombre del vendedor
+                            List<Persona> usuarios = gestor.cargarUsuarios();
+                            
+                            // Buscamos el objeto Vendedor 
+                            nombreVendedor = usuarios.stream()
+                                .filter(p -> p instanceof Vendedor)
+                                .filter(v -> ((Vendedor)v).generarIdNombre().equals(idVendedorLog))
+                                .map(Persona::getNombre)
+                                .findFirst()
+                                .orElse("Vendedor Desconocido"); // Usar fallback
+
+                        } else {
+                            // Fallback si no se puede leer el log del vendedor (problema de archivo)
+                            nombreVendedor = "Vendedor Temporal"; 
+                        }
+
+                        // Formato de la clave: ID|AAAAMMDD|hhmm
+                        String[] partesClave = claveSeleccionada.split("\\|");
+                        String fechaHoraTerminacionStr = partesClave[1] + ":" + partesClave[2]; // AAAAMMDD:hhmm
+
+                        String mensajeListo = String.format(
+                            "Hola, soy %s. Ya está lista tu orden de dulcería. Puedes pasar a recogerla en la fila de dulcería para ventas de la app. %s",
+                            nombreVendedor, fechaHoraTerminacionStr
+                        );
+
+                        gestor.guardarMensajeNotificacion(mensajeListo);
+                            
+                        } else {
+                            // Orden en progreso (La clave existe en 'ordenesDelCliente' pero no en 'ordenesTerminadas').
+                            String mensajeProgreso = "Estamos trabajando arduamente para que tus alimentos sean deliciosos. Por favor, espera un poco más =D";
+                            gestor.guardarMensajeNotificacion(mensajeProgreso);
+                        }
+                        
+                        // 5. Mostrar el mensaje al cliente leyendo el archivo
+                        String mensajeFinal = gestor.leerMensajeNotificacion();
+                        JOptionPane.showMessageDialog(null, mensajeFinal, "Estado de la Orden: " + claveSeleccionada, JOptionPane.INFORMATION_MESSAGE);
+                        reintentar = false;
+                    } catch (NumberFormatException nfe) {
+                        JOptionPane.showMessageDialog(null, "Entrada inválida. Por favor, ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                        reintentar = true;
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(null, "Error al revisar notificaciones: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+                        reintentar = false;
+                    }
+                } while (reintentar);
             }
             default -> menuCliente(gestor, cliente);
         }
@@ -763,11 +788,10 @@ public class Cliente extends Persona {
                     hasBoletos = true; // Se encontró un boleto para esta función
                     break;             // No necesitamos revisar más boletos para esta función
                 }
-                
-                if (hasBoletos) {
-                    funcionesCompradas.add(f);
-                    break;
-                }
+            }
+
+            if (hasBoletos) {
+                funcionesCompradas.add(f);
             }
         }
         return funcionesCompradas;
