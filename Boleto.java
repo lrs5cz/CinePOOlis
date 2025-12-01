@@ -2,6 +2,7 @@ public class Boleto extends Funcion {
     // Atributos
     private String asiento;
     private int precio;
+    private String nicknameComprador;
 
     // Constructor
     public Boleto(String fecha, String hora, String sala, Pelicula pelicula, String asiento) {
@@ -30,9 +31,17 @@ public class Boleto extends Funcion {
     public void sePrecio(int precio) {
         this.precio = precio;
     }
+    public String getNicknameComprador(){
+        return nicknameComprador;
+    }
+
+    public void setNickname(String nicknameComprador){
+        this.nicknameComprador= nicknameComprador;
+    }
 
     @Override
     public String toString() {
         return super.toString() + "|" + asiento;
     }
+
 }
