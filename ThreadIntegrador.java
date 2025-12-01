@@ -31,23 +31,15 @@ public class ThreadIntegrador implements Runnable {
         long pausaMillis = (rand.nextInt(maxSegundos - minSegundos + 1) + minSegundos) * 1000L;
         Thread.sleep(pausaMillis);
     }
-    
-    /**
-     * Simula la preparación de la orden y retorna el tipo de orden.
-     */
+
     public String prepararOrden (Vendedor vendedor) {
-        // En una implementación real, este método podría contener lógica para
-        // descontar inventario, etc. Aquí solo registraremos el nombre del combo.
         String tipoOrden = "";
-        
-        // Asumiendo que la orden solo contiene un combo/orden personalizada a la vez
-        if (!orden.getOrden().isEmpty()) {
-            Combo combo = orden.getOrden().get(0);
-            tipoOrden = combo.getNombreCombo();
+
+        if (orden.getOrden().isEmpty()) {
+            return null;
         }
         
-        // Simular la "preparación" (podría ser un switch para diferentes duraciones,
-        // pero el requerimiento es una pausa genérica).
+        // Simular la "preparación" 
         try {
             // Pausa de 10 a 15 segundos antes de terminar
             simularPausa(10, 15); 
@@ -59,9 +51,6 @@ public class ThreadIntegrador implements Runnable {
         return tipoOrden;
     }
 
-    /**
-     * Implementación del método para obtener un Vendedor disponible según turno y día.
-     */
     private Vendedor obtenerVendedor (List<Persona> personas) {
         ZonedDateTime tiempo = ZonedDateTime.now();
         int hora = tiempo.getHour();
@@ -109,7 +98,7 @@ public class ThreadIntegrador implements Runnable {
         String tipoOrden = "";
 
         try {
-            // 1. Pausa inicial: 20 a 40 segundos antes de asignar la orden
+            // Pausa inicial: 20 a 40 segundos antes de asignar la orden
             JOptionPane.showMessageDialog(null, "Esperando asignación de orden", "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
             simularPausa(20, 40); 
             
@@ -136,37 +125,42 @@ public class ThreadIntegrador implements Runnable {
             mensaje = "Iniciando la preparación...";
             JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
             tipoOrden = prepararOrden(vendedorAsignado);
-            
-            ZonedDateTime horaFinPrep = ZonedDateTime.now();
-            
-            // Actualizar el historial del empleado
-            logOrden = String.format(
-                "Clave: %s, Tipo: %s | Generada: %s | Asignada: %s | Inicio Prep: %s | Fin Prep: %s",
-                claveOrden,
-                tipoOrden,
-                horaGeneracion.format(FORMATO_LOG),
-                horaAsignacion.format(FORMATO_LOG),
-                horaInicioPrep.format(FORMATO_LOG),
-                horaFinPrep.format(FORMATO_LOG)
-            );
-            
-            // El historial del vendedor lleva el ID de usuario del vendedor
-            String idVendedor = vendedorAsignado.generarIdNombre();
-            gestor.guardarHistorialVendedor(idVendedor, logOrden);
-            
-            // Actualizar el archivo de notificaciones del cliente
-            // La clave de dulcería que se guarda aquí indica que la orden está lista
-            gestor.guardarNotificacionCliente(claveOrden);
 
-            mensaje = "Orden " + claveOrden + " ha sido preparada. :)";
-            JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
-            
+            if (!(tipoOrden == null)) {
+                ZonedDateTime horaFinPrep = ZonedDateTime.now();
+                
+                // Actualizar el historial del empleado
+                logOrden = String.format(
+                    "Clave: %s, Tipo: %s | Generada: %s | Asignada: %s | Inicio Prep: %s | Fin Prep: %s",
+                    claveOrden,
+                    tipoOrden,
+                    horaGeneracion.format(FORMATO_LOG),
+                    horaAsignacion.format(FORMATO_LOG),
+                    horaInicioPrep.format(FORMATO_LOG),
+                    horaFinPrep.format(FORMATO_LOG)
+                );
+                
+                // El historial del vendedor lleva el ID de usuario del vendedor
+                String idVendedor = vendedorAsignado.generarIdNombre();
+                gestor.guardarHistorialVendedor(idVendedor, logOrden);
+                
+                // Actualizar el archivo de notificaciones del cliente
+                // La clave de dulcería que se guarda aquí indica que la orden está lista
+                gestor.guardarNotificacionCliente(claveOrden);
+
+                mensaje = "Orden " + claveOrden + " ha sido preparada. :)";
+                JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
+            } else {
+                throw new NullPointerException("Error. No hay ninguna orden para preparar");
+            }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error de archivo en la integración de la orden: " + e.getMessage(), "Error I/O", JOptionPane.ERROR_MESSAGE);
         } catch (InterruptedException e) {
             // El hilo fue interrumpido
             JOptionPane.showMessageDialog(null, "El proceso de preparación de la orden fue interrumpido.", "Cancelado", JOptionPane.WARNING_MESSAGE);
             Thread.currentThread().interrupt(); // Restaurar el estado de interrupción
+        } catch (NullPointerException e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error desconocido en la integración de la orden: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
         }
