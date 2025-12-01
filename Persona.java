@@ -1,4 +1,6 @@
-public abstract class Persona {
+import java.io.*;
+
+public abstract class Persona implements Serializable {
     // Atributos
     private String nombre, apellidoP, apellidoM, numeroCelular;
     private int edad;

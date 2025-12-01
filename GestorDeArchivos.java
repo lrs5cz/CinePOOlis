@@ -215,7 +215,7 @@ public class GestorDeArchivos {
         BufferedReader objetoReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES));
         String linea;
         while((linea = objetoReader.readLine()) != null){
-            String[] partes = linea.split(":");
+            String[] partes = linea.split("|");
             String idPelicula = partes[0];
             String fecha = partes[1];
             String hora = partes[2];
@@ -232,7 +232,7 @@ public class GestorDeArchivos {
 
     private Pelicula buscarPeliculaPorId(List<Pelicula> cartelera, String id) {
         for (Pelicula p : cartelera) {
-            if (p.getIdPelicula().equals(id)) { // Asumo que Pelicula tiene getIdPelicula()
+            if (p.getIdPelicula().equals(id)) { 
                 return p;
             }
         }
@@ -249,7 +249,7 @@ public class GestorDeArchivos {
         try (BufferedReader objetReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES))){
             String linea;
             while((linea = objetReader.readLine()) != null){
-                String[] datos = linea.split(":");
+                String[] datos = linea.split("|");
                 String fecha = datos[1];
                 String hora = datos[2];
                 String sala = datos[3];

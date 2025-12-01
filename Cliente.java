@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
-import java.io.IOException;
+import java.io.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -32,41 +32,83 @@ public class Cliente extends Persona {
     // Métodos
 
     // Método para mostrar el menú del cliente
+    // Método para mostrar el menú del cliente
     public static void menuCliente (GestorDeArchivos gestor, Cliente cliente) {
-        try {
-            // Cargamos archivos
-            List<Persona> usuarios = gestor.cargarUsuarios();
-            List<Pelicula> cartelera = gestor.cargarPeliculas();
-            List<Funcion> funciones = gestor.mostrarFunciones(cartelera);
-            List<Boleto> boletos = gestor.cargarBoletosEnArchivo(cartelera);
-            List<String> ordenes = gestor.cargarOrdenesDeUsuario(cliente);
-            String[] opciones = {"Ver cartelera", "Comprar boletos", "Comprar en dulcería", "Notificaciones", "Cerrar Sesión"};
-            Validaciones v = new Validaciones();
-            int opcion = JOptionPane.showOptionDialog(null, "Menú del cliente.\n\n¿Qué acción desea realizar?", "CinePOOlis",
-            JOptionPane.PLAIN_MESSAGE,  JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
+        // Definimos las variables fuera del bucle do-while
+        List<Cliente> clientes = new ArrayList<>(); 
+        List<Pelicula> cartelera;
+        List<Funcion> funciones;
+        List<Boleto> boletos;
+        List<String> ordenes;
+        Validaciones v = new Validaciones();
+        int opcion;
+        final int CERRAR_SESION = 4; // Índice de la opción "Cerrar Sesión"
+        final String[] opciones = {"Ver cartelera", "Comprar boletos", "Comprar en dulcería", "Notificaciones", "Cerrar Sesión"};
+        
+        // Bucle para mantener al usuario en el menú hasta que elija "Cerrar Sesión"
+        do {
+            try {
+                // Recargamos archivos en cada iteración por si han sido modificados
+                clientes = gestor.cargarClientes(); 
+                cartelera = gestor.cargarPeliculas();
+                // Esta línea puede ser el origen del IndexOutOfBounds si no hay funciones.
+                // Asegúrate de que gestor.mostrarFunciones maneje listas vacías.
+                funciones = gestor.mostrarFunciones(cartelera); 
+                boletos = gestor.cargarBoletosEnArchivo(cartelera);
+                ordenes = gestor.cargarOrdenesDeUsuario(cliente);
+                
+                // Mostrar diálogo
+                opcion = JOptionPane.showOptionDialog(
+                    null, 
+                    "Menú del cliente. Bienvenido/a, " + cliente.getNicknameCuenta() + "\n\n¿Qué acción desea realizar?", 
+                    "CinePOOlis",
+                    JOptionPane.PLAIN_MESSAGE,
+                    JOptionPane.INFORMATION_MESSAGE, 
+                    null, 
+                    opciones, 
+                    opciones[0]
+                );
 
-            switch (opcion) {
-                case 0 -> { 
-                    verCartelera(cartelera);
+                // Manejo de la opción
+                switch (opcion) {
+                    case 0 -> { 
+                        verCartelera(cartelera);
+                    }
+                    case 1 -> {
+                        comprarBoletos(cartelera, funciones, gestor);
+                    }
+                    case 2 -> {
+                        List<Combo> comanda = new ArrayList<>();
+                        Orden orden = new Orden(comanda); 
+                        
+                        // Asegurarse de que el método comprarDulceria se ejecute, pero sin un loop explícito aquí.
+                        comprarDulceria(orden, gestor, cliente);
+                    }
+                    case 3 -> {
+                        revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
+                    }
+                    case CERRAR_SESION -> {
+                        // El bucle terminará y el control volverá al método llamador.
+                        JOptionPane.showMessageDialog(null, "Cerrando sesión...", "Cerrar Sesión", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    case JOptionPane.CLOSED_OPTION -> { // Manejo explícito del -1
+                        // El usuario cerró la ventana, también cerramos la sesión.
+                        opcion = CERRAR_SESION;
+                    }
                 }
-                case 1 -> {
-                    comprarBoletos(cartelera, funciones, gestor);
-                }
-                case 2 -> {
-                    List<Combo> comanda = new ArrayList<>();
-                    Orden orden = new Orden(comanda);
-                    comprarDulceria(orden, gestor, cliente);
-                }
-                case 3 -> {
-                    revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
-                }
-                default -> CinePOOlis.menuPrincipal(gestor, v, usuarios);
+                
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Error al cargar datos o procesar la orden: " + e.getMessage(), "Error de IO", JOptionPane.ERROR_MESSAGE);
+                opcion = CERRAR_SESION; // Forzar salida del menú ante un error grave de IO
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Error desconocido: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+                opcion = CERRAR_SESION; // Forzar salida del menú ante un error desconocido
             }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+            
+        } while (opcion != CERRAR_SESION);
+
+        // Volver al menú principal después de cerrar sesión
+        CinePOOlis.menuPrincipal(gestor, v, clientes); 
     }
 
     // Método para mostrar la cartelera de películas
@@ -98,41 +140,46 @@ public class Cliente extends Persona {
     // Método para comprar boletos (Retorna la clave de los boletos)
     public static void comprarBoletos(List<Pelicula> cartelera, List<Funcion> funciones, GestorDeArchivos gestor) {
         try {
-            // Creamos una lista para las claves de los boletos y otra para los boletos
-            List<String> boletosClave = new ArrayList<>();
             List<Boleto> boletos = new ArrayList<>();
-
             do {
                 try {
                     // Seleccionamos la función
                     Funcion funcionSeleccionada = seleccionarFuncion(funciones);
                     if (funcionSeleccionada == null) break;
+                    
                     // Seleccionamos los asientos
                     boletos = seleccionarAsiento(funcionSeleccionada);
-                    // Añadimos las claves de los boletos
-                    for (Boleto b : boletos) {
-                        boletosClave.add(b.toString());
+                    
+                    if (boletos.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "No se compraron boletos.", "Información", JOptionPane.INFORMATION_MESSAGE);
+                        break;
                     }
+                    
                     // Obtenemos el precio total
                     int precioTotal = 0;
                     for (Boleto b : boletos) {
                         precioTotal += b.getPrecio();
                     }
+                    
                     // Mostramos los boletos comprados
                     mostrarBoletosComprados(boletos, precioTotal);  
-                    // Salimos del bucle
+                    
+                    // Guardar boletos
+                    for(Boleto b : boletos) {
+                        gestor.guardarBoletosEnArchivo(b);
+                    }
+                    
                     break;
                 } catch (Exception e) {
-                    System.err.println("Error." + e.getMessage());
+                    System.err.println("Error: " + e.getMessage());
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Error al comprar boletos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    break;
                 }
             } while (true);
-            for(Boleto b : boletos) {
-                gestor.guardarBoletosEnArchivo(b);
-            }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Error inesperado: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -238,7 +285,7 @@ public class Cliente extends Persona {
             
             // Manejar cancelación
             if (inputCantidad == null) {
-                return null; // El usuario canceló la selección
+                return new ArrayList<>(); // El usuario canceló la selección
             }
 
             try {
@@ -284,40 +331,57 @@ public class Cliente extends Persona {
                 if (asientoSeleccionado == null) {
                     // Si cancela a mitad de selección, detenemos el proceso
                     JOptionPane.showMessageDialog(null, "Proceso de reserva cancelado.", "Cancelado", JOptionPane.WARNING_MESSAGE);
-                    return null;
+                    return new ArrayList<>();
                 }
                 
                 asientoSeleccionado = asientoSeleccionado.trim().toUpperCase();
 
-                // Validación de formato básico (mínimo 2 caracteres)
-                if (asientoSeleccionado.length() > 3 || asientoSeleccionado.length() < 2) {
-                    JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1 o B10.", "Error", JOptionPane.ERROR_MESSAGE); // Mover el mensaje aquí
-                    continue; // Repite el bucle 'do-while'
+                if (!asientoSeleccionado.matches("^[A-Z][1-9][0-9]?$")) {
+                    JOptionPane.showMessageDialog(null, "Formato inválido. Ejemplo: A1 o B10. La letra debe ser mayúscula.", "Error", JOptionPane.ERROR_MESSAGE);
+                    continue;
                 }
 
                 try {
-                    String letraStr, numeroStr;
-                    // Parseo de la letra y el número
-                    if (asientoSeleccionado.length() == 2) {
-                        letraStr = asientoSeleccionado.substring(0, 1);
-                        numeroStr = asientoSeleccionado.substring(1, 2);
-                    } else { // longitud == 3
-                        letraStr = asientoSeleccionado.substring(0, 1);
-                        numeroStr = asientoSeleccionado.substring(1, 3);
-                    }
+                    // Parseo mejorado de la letra y el número
+                    String letraStr = asientoSeleccionado.substring(0, 1);
+                    String numeroStr = asientoSeleccionado.substring(1);
                     
-
-                    int indiceFila = funcion.obtenerNumeroFila(letraStr); // Convertir letra a índice
-                    int indiceColumna = Integer.parseInt(numeroStr) - 1; // Columna base 1 a base 0
+                    int indiceFila = funcion.obtenerNumeroFila(letraStr);
+                    int indiceColumna = Integer.parseInt(numeroStr) - 1;
 
                     // Validar que los índices estén dentro de los límites de la matriz
-                    if (indiceFila < 0 || indiceFila >= asientos.length ||
-                        indiceColumna < 0 || indiceColumna >= asientos[0].length) {
-                        
-                        throw new IndexOutOfBoundsException("Asiento fuera de los límites de la sala.");
+                    if (indiceFila < 0 || indiceFila >= asientos.length) {
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "Fila " + letraStr + " no existe en esta sala.", 
+                            "Error de Rango", 
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        continue;
+                    }
+                    
+                    // Validar que los índices estén dentro de los límites de la matriz
+                    if (indiceColumna < 0 || indiceColumna >= asientos[0].length) {
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "Columna " + (indiceColumna + 1) + " no existe en esta sala.", 
+                            "Error de Rango", 
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        continue;
                     }
                     
                     String asientoActual = asientos[indiceFila][indiceColumna];
+
+                    if (asientoActual == null) {
+                        JOptionPane.showMessageDialog(
+                            null, 
+                            "El asiento " + asientoSeleccionado + " es inválido (posible pasillo).",
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        continue;
+                    }
 
                     if (asientoActual.endsWith("[O]")) {
                         // Marcar asiento como reservado
@@ -330,6 +394,22 @@ public class Cliente extends Persona {
                             "Asiento Reservado", 
                             JOptionPane.INFORMATION_MESSAGE
                         );
+
+                        ThreadBancario procesoPago = new ThreadBancario();
+                        Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
+
+                        hiloProceso.start();
+
+                        try {
+                            hiloProceso.join(); 
+                        } catch (InterruptedException e) {
+                            JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
+                            return null; // Cancelamos la compra de boletos.
+                        }
+
+                        // Creamos los boletos
+                        Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), ultimoAsientoReservado);
+                        boletosComprados.add(boleto);
                     } else if (asientoActual.endsWith("[X]")) {
                         JOptionPane.showMessageDialog(
                             null, 
@@ -354,35 +434,11 @@ public class Cliente extends Persona {
                         "Error de Formato", 
                         JOptionPane.ERROR_MESSAGE
                     );
-                } catch (IndexOutOfBoundsException e) {
-                    // Captura si el asiento está fuera del rango de la matriz (ej: Z99)
-                    JOptionPane.showMessageDialog(
-                        null, 
-                        "Asiento " + asientoSeleccionado + " no existe en esta sala. Revisa el mapa.", 
-                        "Error de Rango", 
-                        JOptionPane.ERROR_MESSAGE
-                    );
-                }
+                } 
             } while (!asientoReservado);
-            // Creamos los hilos que muestran el proceso del pago
-            ThreadBancario procesoPago = new ThreadBancario();
-            Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
-
-            hiloProceso.start();
-
-            try {
-                hiloProceso.join(); 
-            } catch (InterruptedException e) {
-                JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
-                return null; // Cancelamos la compra de boletos.
-            }
-
-            // Creamos los boletos
-            Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), ultimoAsientoReservado);
-            boletosComprados.add(boleto);
         }
-    return boletosComprados; // Devuelve una lista con los boletos comprados
-}
+        return boletosComprados;
+    }
 
     // Método auxiliar para ver asientos según la sala
     /*
@@ -463,7 +519,7 @@ public class Cliente extends Persona {
         String sabor = "";
         Combo combo = new Combo("", 0); // Inicialización de la variable combo
         Alimento alimento = new Alimento("", "", 0); // Inicialización de la variable alimento
-        List<Combo> comanda = orden.generarOrden(); 
+        List<Combo> comanda = orden.getOrden();
 
         try {
             // Solicitamos al usuario que elija un combo o una orden personalizada
@@ -474,6 +530,11 @@ public class Cliente extends Persona {
             null,
             opcionesCombo,
             opcionesCombo[0]);
+
+            if (seleccion == JOptionPane.CLOSED_OPTION) {
+                JOptionPane.showMessageDialog(null, "Compra de dulcería cancelada.", "Cancelación", JOptionPane.INFORMATION_MESSAGE);
+                return null; // Devolver NULL para indicar la cancelación a menuCliente
+            }
 
             switch(seleccion) {
                 case 0:
@@ -527,8 +588,9 @@ public class Cliente extends Persona {
                         }
                     }
                     comanda.add(ordenPersonalizada);
-                    break;              
+                    break;
             }
+
             orden.setOrden(comanda);
             // Creamos los hilos que muestran el proceso del pago
             ThreadBancario procesoPago = new ThreadBancario();
@@ -720,13 +782,12 @@ public class Cliente extends Persona {
                         
                         if (logDetallado != null) {
                             // Cargamos todos los usuarios para encontrar el nombre del vendedor
-                            List<Persona> usuarios = gestor.cargarUsuarios();
+                            List<Vendedor> vendedores = gestor.cargarVendedores();
                             
                             // Buscamos el objeto Vendedor 
-                            nombreVendedor = usuarios.stream()
-                                .filter(p -> p instanceof Vendedor)
-                                .filter(v -> ((Vendedor)v).generarIdNombre().equals(idVendedorLog))
-                                .map(Persona::getNombre)
+                            nombreVendedor = vendedores.stream()
+                                .filter(v -> (v.generarIdNombre().equals(idVendedorLog)))
+                                .map(Vendedor::getNombre)
                                 .findFirst()
                                 .orElse("Vendedor Desconocido"); // Usar fallback
 
