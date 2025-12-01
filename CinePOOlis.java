@@ -19,9 +19,9 @@ public class CinePOOlis {
             case 1 -> accesoSistema(gestor, usuarios);
 
             default -> {
-                SalidaThread salida = new SalidaThread();
-                Thread hiloSalida = new Thread(salida);
-                hiloSalida.start();
+                JOptionPane.showMessageDialog(null, "Saliendo del programa...", "Salida", JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Hasta luego!", "Salida", JOptionPane.PLAIN_MESSAGE);
+                System.exit(0);
             }
         } 
     }
@@ -177,11 +177,11 @@ public class CinePOOlis {
             // Manejar cancelación
             if (passwordIngresado == null) return; 
 
-            // 1. Intentar autenticación
+            // Intentar autenticación
             usuario = getUsuario(usuarios, nicknameIngresado, passwordIngresado);
 
             if (usuario == null) {
-                // 2. Mostrar error y pedir reintento (o finalizar)
+                // Mostrar error y pedir reintento (o finalizar)
                 int opcion = JOptionPane.showConfirmDialog(
                     null, 
                     "Error: Nickname o contraseña incorrectos.\n¿Desea reintentar?", 
@@ -198,6 +198,7 @@ public class CinePOOlis {
             }
 
         } while (!inicioSesion);
+
 
         // Casteamos usuario según su instancia
         if (usuario instanceof Cliente) {
