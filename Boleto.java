@@ -28,7 +28,7 @@ public class Boleto extends Funcion {
         return precio;
     }
 
-    public void sePrecio(int precio) {
+    public void setPrecio(int precio) {
         this.precio = precio;
     }
     public String getNicknameComprador(){
@@ -45,3 +45,4 @@ public class Boleto extends Funcion {
     }
 
 }
+
