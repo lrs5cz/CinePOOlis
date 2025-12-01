@@ -23,33 +23,29 @@ public class Administrador extends Empleado {
     }
 
     // Métodos
-    boolean banderaRepetir = false;
-        public void agregarPeliculaACartelera() {
-        do {
-            try {
-                banderaRepetir =false;
-
-                String nombrePelicula = JOptionPane.showInputDialog("Ingrese el nombre de la película:", "Ej. Titanic");
-                String generoPelicula = JOptionPane.showInputDialog("Ingrese el género de la película:", "Ej. Terror");
-                String sinopsis = JOptionPane.showInputDialog("Ingrese la sinopsis de la película:");
-                String duracion = JOptionPane.showInputDialog("Ingrese la duración de la película (formato hh:mm):", "Ej. 02:24");
-                
-                Pelicula nuevaPelicula = new Pelicula(nombrePelicula, generoPelicula, sinopsis, duracion);
-                GestorDeArchivos unGestorDearchivosAdministrador = new GestorDeArchivos();// Crea un objeto de la clase GestorDearchivosAdministrador
-                unGestorDearchivosAdministrador.guardarPeliculaEnArchivo(nuevaPelicula); // Llama al metodo que guarda la pelicula en el archivo
-                List<Pelicula> cartelera = unGestorDearchivosAdministrador.cargarPeliculas(); // Lista de peliculas cargadas desde el archivo
-                cartelera.add(nuevaPelicula);// Agregar a la lista de cartelera
-                JOptionPane.showMessageDialog(null, "La película " + nombrePelicula + " ha sido agregada a la cartelera.");
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(null, "Error al agregar la película. Por favor, intente de nuevo.");
-                banderaRepetir = true;
-            }
-        } while (banderaRepetir);
+    //Nota: Se tiene que validar que la película no exista ya en el archivo con el nombre (o el ID) 
+    public static void agregarPeliculaACartelera(GestorDeArchivos gestor) {
+            boolean banderaRepetir = false;
+            do {
+                try {
+                    String nombrePelicula = JOptionPane.showInputDialog("Ingrese el nombre de la película", "Ej. Titanic");
+                    String generoPelicula = JOptionPane.showInputDialog("Ingrese el género de la película", "Ej. Terror");
+                    String sinopsis = JOptionPane.showInputDialog("Ingrese la sinopsis de la película");
+                    String duracion = JOptionPane.showInputDialog("Ingrese la duración de la película (formato hh:mm)", "Ej. 02:24");
+                    
+                    Pelicula nuevaPelicula = new Pelicula(nombrePelicula, generoPelicula, sinopsis, duracion);
+                    gestor.guardarPeliculaEnArchivo(nuevaPelicula); // Llama al metodo que guarda la pelicula en el archivo
+                    List<Pelicula> cartelera = gestor.cargarPeliculas(); // Lista de peliculas cargadas desde el archivo
+                    cartelera.add(nuevaPelicula);// Agregar a la lista de cartelera
+                    JOptionPane.showMessageDialog(null, "La película " + nombrePelicula + " ha sido agregada a la cartelera.");
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(null, "Error al agregar la película. Por favor, intente de nuevo.");
+                    banderaRepetir = true;
+                }
+            } while (banderaRepetir);
     }
 
-
-    public void agregarFuncion() throws IOException{
-        GestorDeArchivos gestor = new GestorDeArchivos();
+    public static void agregarFuncion(GestorDeArchivos gestor) throws IOException{
         try {
             List<Pelicula> peliculas = gestor.cargarPeliculas();
             if(peliculas.isEmpty()){
@@ -62,42 +58,35 @@ public class Administrador extends Empleado {
             for(int i = 0; i < peliculas.size(); i++) {
                 unStringBuilder.append((i + 1)).append(". ").append(peliculas.get(i).getNombrePelicula()).append("\n");
             }
-
-            JOptionPane.showMessageDialog(null, unStringBuilder.toString());
-            JOptionPane.showConfirmDialog(null, "Ingrese el numero de la pelicula");
-            String seleccion = JOptionPane.showInputDialog("Ingrese el numero de la pelicula que desea seleccionar");
-            
-            /*
-             * Nota: Podemos castear directamente y validar con un try-catch y NumberFormatException
-             */
+            String seleccion = JOptionPane.showInputDialog("Ingrese el numero de la pelicula que desea seleccionar\n" + unStringBuilder,
+                "Ej. 0");
 
             if(seleccion == null) return;
 
-                int idSelec;
+            int idSelec = -1;
             try {
-                idSelec = Integer.parseInt(seleccion)-1;
+                idSelec = Integer.parseInt(seleccion) - 1;
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Error al procesar, Numero no valido"+ e.getMessage());
                 return;
             }
 
             if (idSelec < 0 || idSelec >= peliculas.size()) {
-                JOptionPane.showMessageDialog(null, "Ese numero esta fuera de rango");
+                JOptionPane.showMessageDialog(null, "Error. Elige un número válido");
                 return;
             }
 
             Pelicula unaPeli = peliculas.get(idSelec);
 
             String fecha = JOptionPane.showInputDialog("Ingrese la fecha de la función (AAAA/MM/DD)", "Agregar Función");
-            if(fecha == null)return;
+            if (fecha == null) return;
             
-            //Para la seleccion de sala
+            // Para la seleccion de sala
             String[] opcionesSalas = {"Sala A", "Sala B", "Sala VIP"}; 
             int salaIdx = JOptionPane.showOptionDialog(null, "Seleccione una sala","Agregar Función",JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,null,opcionesSalas,opcionesSalas[0]);
-            String salaSeleccionada = (salaIdx == 0)? "A":(salaIdx == 1)? "B" : "VIP";
-            if (salaIdx < 0 || salaIdx > 3) return;
+            String salaSeleccionada = opcionesSalas[salaIdx];
             
-            //Mostramos las funciones existentes
+            // Mostramos las funciones existentes
             List<Pelicula> cartelera = gestor.cargarPeliculas();
             List<Funcion> funcionesExistentes = gestor.mostrarFunciones(cartelera);
             StringBuilder programacion = new StringBuilder("Programacion para "+ fecha + " en Salas \n");
@@ -105,21 +94,17 @@ public class Administrador extends Empleado {
                 programacion.append("(No hay funciones)\n");
             } else {
                 for(Funcion f : funcionesExistentes){
-                    programacion.append(f.getIdPelicula()).append(" : ").append(f.getHora().substring(0,2)).append(" : ").append(f.getHora().substring(2,4)).append("\n");
-
+                    programacion.append(f.getIdPelicula()).append(" | ").append(f.getHora().substring(0,2)).append(" | ").append(f.getHora().substring(2,4)).append("\n");
                 }
-                JOptionPane.showMessageDialog(null, programacion.toString());
+                JOptionPane.showMessageDialog(null, programacion.toString(), "Funciones programadas", JOptionPane.INFORMATION_MESSAGE);
             }
             while(true) {
-                String accion = JOptionPane.showInputDialog("Escriba 'Cancelar' o 'Alta'");
-                if (accion == null || accion.equalsIgnoreCase("Cancelar")) return;
-                if (!accion.equalsIgnoreCase("Alta")) {
-                    JOptionPane.showMessageDialog(null, "Opcion invalida");
-                    continue;
-                }
+                int accion = JOptionPane.showConfirmDialog(null, "¿Desea dar de alta una función de la película " +
+                unaPeli.getNombrePelicula() + "?", "Confirmación", JOptionPane.YES_NO_OPTION);
+                if (accion == JOptionPane.NO_OPTION || accion == -1) return;
 
-                String horaS =JOptionPane.showInputDialog("Ingrese la hora(00-23)");
-                String minS =JOptionPane.showInputDialog("Ingrese los minutos (00-59)");
+                String horaS =JOptionPane.showInputDialog("Ingrese la hora (00 - 23)");
+                String minS =JOptionPane.showInputDialog("Ingrese los minutos (00 - 59)");
                 if(minS == null)return;
                 int h , m;
                 try {
@@ -132,8 +117,8 @@ public class Administrador extends Empleado {
                     continue;
                 }
                 String horaFinal = String.format("%02d%02d", h, m);
-                //Validar intervalo entre funciones
-                //gestor.validarIntervaloEntreFunciones(salaSeleccionada, Fecha, horaFinal);
+                // Validar intervalo entre funciones
+                gestor.validarIntervaloEntreFunciones(salaSeleccionada, fecha, horaFinal, unaPeli);
                 if(!gestor.validarIntervaloEntreFunciones(salaSeleccionada, fecha, horaFinal, unaPeli)){
                     JOptionPane.showMessageDialog(null, "Existe otra funcion programada a menos de 30min para esta sala");
                     continue;
@@ -141,10 +126,10 @@ public class Administrador extends Empleado {
 
                 // Generar ID y guardar la función
                 Funcion nuevaFuncion = new Funcion(fecha, horaFinal, salaSeleccionada, unaPeli);
-                String idFuncion = nuevaFuncion.getIdPelicula() + ":" + fecha.replace("/", "")+ ":" + horaFinal + ":" + salaSeleccionada;
+                String idFuncion = nuevaFuncion.getIdPelicula() + "|" + fecha.replace("/", "")+ "|" + horaFinal + "|" + salaSeleccionada;
                 
                 gestor.guardarFuncionesEnArchivo(nuevaFuncion);
-                JOptionPane.showMessageDialog(null, "Funcion registrada con id:\n"+idFuncion);
+                JOptionPane.showMessageDialog(null, "Funcion registrada con el siguiente ID:\n" + idFuncion);
                 break;
             }
 
@@ -154,36 +139,26 @@ public class Administrador extends Empleado {
     }
     
     //Función para mostrar el menu del administrador
-    public void mostrarMenuAdministrador() throws IOException{
-        int opcionint = -1;
-        do { 
-            JOptionPane.showMessageDialog(null, "--- MENU ADMINISTRADOR ---\n1. Agregar Pelicula a Cartelera\n2. Agregar Funcion\n3. Registrar Empleado\n4. Películas para las que el cliente compró boletos\n5. Salir","**MENU**",JOptionPane.PLAIN_MESSAGE);
-            String opcion = JOptionPane.showInputDialog("Ingrese la opcion deseada");
-            if(opcion == null){
-                JOptionPane.showMessageDialog(null, "Saliendo del menu...");
-                break;
+    public static void menuAdmin(GestorDeArchivos gestor, Validaciones v) throws IOException {
+        List<Administrador> administradores = gestor.cargarAdmin();
+        do {
+            String[] opciones = {"Agregar Película a cartelera", "Agregar Función", "Registrar Empleado", "Ver boletos comprados de un cliente", "Cerrar sesión"};
+            int opcion = JOptionPane.showOptionDialog(null,"Bienvenido al sistema de Administradores de CinePOOlis",
+            "Administradores", JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
+        
+            switch (opcion) {
+                case 0 -> agregarPeliculaACartelera(gestor);
+                case 1 -> agregarFuncion(gestor);
+                case 2 -> registroEmpleado(gestor, v, administradores);
+                // case 3 -> 
+                default -> JOptionPane.showMessageDialog(null, "Cerrando sesión...");
             }
-            //Validamos que sea un valor numerico
-            try {
-                opcionint = Integer.parseInt(opcion);
-                
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Ingrese un numero valido");
-                continue;
-            }
-            switch (opcionint) {
-                case 1 -> agregarPeliculaACartelera();
-                case 2 -> agregarFuncion();
-                case 3 -> registroEmpleado(null, null, null);
-                case 4 -> JOptionPane.showMessageDialog(null, "Saliendo del menu...");
-                default -> JOptionPane.showMessageDialog(null, "Opcion no valida, intente de nuevo.");
-            }
-            //agregarFuncion(funciones, cartelera, opcion)
-        } while (opcionint != 0);
+            // agregarFuncion(funciones, cartelera, opcion)
+        } while (true);
     }
-//funcion qye registra a los empleados
-    public void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Administrador> administradores) {
-        String nombre, apellidoP, apellidoM, numeroCelular, nickname = "";
+    // Funcion que registra a los empleados
+    public static void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Administrador> administradores) {
+        String nombre, apellidoP, apellidoM, numeroCelular = "", nickname = "";
         String correo = "", password = "", turno = "";
         int edad = 0;
 
@@ -222,11 +197,7 @@ public class Administrador extends Empleado {
                 }
             }
 
-            numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
-                "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
-                if (numeroCelular == null) return;
-                // Validar celular único
-                boolean celularUnico = false;
+            boolean celularUnico = false;
             while (!celularUnico) {
                 numeroCelular = JOptionPane.showInputDialog(null, "Ingrese su número telefónico", 
                 "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
@@ -250,7 +221,7 @@ public class Administrador extends Empleado {
                 if (v.existeNicknameAdmin(administradores, nickname)) {
                     JOptionPane.showMessageDialog(null, "Error. El nickname ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
-                    celularUnico = true;
+                    nicknameUnico = true;
                 }
             }
 
@@ -292,31 +263,35 @@ public class Administrador extends Empleado {
             }
 
             // Aquí se pide el turno
-            turno = JOptionPane.showInputDialog(null,
-                    "Ingrese turno del empleado (Matutino / Vespertino / Nocturno):",
-                    "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE);
+            String[] opcionesTurno = {"Matutino", "Vespertino", "Nocturno"};
+            int turnoInt = JOptionPane.showOptionDialog(null,
+                    "Ingrese turno del empleado", "Registro de Empleado", JOptionPane.INFORMATION_MESSAGE, JOptionPane.PLAIN_MESSAGE,
+                null, opcionesTurno, opcionesTurno[0]);
 
-            if (turno == null) return;
+            turno = opcionesTurno[turnoInt];
 
             // Crear cuenta y objeto Empleado
             Cuenta cuenta = new Cuenta(nickname, password, correo);
-            //Empleado empleado = new Empleado(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno);
+
             // Aquí se elige el tipo de empleado
-        String[] opciones = {"Administrador", "Vendedor"};
+        String[] opcionesEmpleado = {"Administrador", "Vendedor"};
         int tipo = JOptionPane.showOptionDialog( null,"Seleccione el tipo de empleado a registrar","Tipo de Empleado",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
                 null,
-                opciones,
-                opciones[0]
+                opcionesEmpleado,
+                opcionesEmpleado[0]
         );
 
         Empleado empleado = null;
 
         switch (tipo) {
             case 0 -> {
-                String diasTrabajo = JOptionPane.showInputDialog(null, "Ingrese los días de trabajo del Administrador:");
-                if (diasTrabajo == null) return;
+                String[] opcionesDia = {"Entre Semana", "Fin de Semana"};
+                int diasTrabajoInt = JOptionPane.showOptionDialog(null, "Ingrese los días de trabajo del Administrador", "Registro Administrador",
+                JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null, opcionesDia, opcionesDia[0]);
+
+                String diasTrabajo = opcionesDia[diasTrabajoInt];
 
                 empleado = new Administrador(
                         nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, diasTrabajo
@@ -324,11 +299,14 @@ public class Administrador extends Empleado {
             }
 
             case 1 -> {
-                String diasTrabajo = JOptionPane.showInputDialog(null, "Ingrese dia de trabajo del Vendedor:");
-                if (diasTrabajo == null) return;
+                String[] opcionesDia = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"};
+                int diaDescansoInt = JOptionPane.showOptionDialog(null, "Ingrese el dia de descanso del vendedor", "Registrar vendedor",
+                JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null, opcionesDia, opcionesDia[0]);
+
+                String diaDescanso = opcionesDia[diaDescansoInt];
 
                 empleado = new Vendedor(
-                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, diasTrabajo
+                        nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, turno, diaDescanso
                 );
             }
 
