@@ -32,7 +32,6 @@ public class Cliente extends Persona {
     // Métodos
 
     // Método para mostrar el menú del cliente
-    // Método para mostrar el menú del cliente
     public static void menuCliente (GestorDeArchivos gestor, Cliente cliente) {
         // Definimos las variables fuera del bucle do-while
         List<Cliente> clientes = new ArrayList<>(); 
@@ -148,7 +147,7 @@ public class Cliente extends Persona {
                     if (funcionSeleccionada == null) break;
                     
                     // Seleccionamos los asientos
-                    boletos = seleccionarAsiento(funcionSeleccionada);
+                    boletos = seleccionarAsiento(funcionSeleccionada, gestor);
                     
                     if (boletos.isEmpty()) {
                         JOptionPane.showMessageDialog(null, "No se compraron boletos.", "Información", JOptionPane.INFORMATION_MESSAGE);
@@ -266,10 +265,16 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar asiento
-    public static List<Boleto> seleccionarAsiento(Funcion funcion) {
-        String[][] asientos = funcion.cargarAsientos();
+    public static List<Boleto> seleccionarAsiento(Funcion funcion, GestorDeArchivos gestor) {
+        String[][] asientos = gestor.cargarAsientos(funcion);
+
+        if (asientos == null) {
+            JOptionPane.showMessageDialog(null, "Error grave: No se pudo cargar el mapa de asientos de la sala.", "Error de Carga", JOptionPane.ERROR_MESSAGE);
+            return new ArrayList<>();
+        }
+
         // Mostrar el mapa de asientos
-        verAsientos(funcion);
+        verAsientos(asientos, gestor);
         
         int asientosASeleccionar = 0;
         boolean cantidadValida = false;
@@ -312,9 +317,12 @@ public class Cliente extends Persona {
             }
         } while (!cantidadValida);
 
-        // Bucle para seleccionar cada asiento individualmente
-        String ultimoAsientoReservado = null; 
-        List<Boleto> boletosComprados = new ArrayList<>(); 
+        // Creamos dos ArrayList para almacenar los índices y las etiquetas
+        List<String> asientosTemporales = new ArrayList<>(); 
+        List<int[]> indicesSeleccionados = new ArrayList<>();
+        // Otro más para almacenar los boletos
+        List<Boleto> boletosComprados = new ArrayList<>();
+
         for (int i = 0; i < asientosASeleccionar; i++) {
             boolean asientoReservado = false;
             
@@ -346,11 +354,11 @@ public class Cliente extends Persona {
                     String letraStr = asientoSeleccionado.substring(0, 1);
                     String numeroStr = asientoSeleccionado.substring(1);
                     
-                    int indiceFila = funcion.obtenerNumeroFila(letraStr);
+                    int indiceFila = gestor.obtenerNumeroFila(letraStr);
                     int indiceColumna = Integer.parseInt(numeroStr) - 1;
 
                     // Validar que los índices estén dentro de los límites de la matriz
-                    if (indiceFila < 0 || indiceFila >= asientos.length) {
+                    if (asientos == null || indiceFila < 0 || indiceFila >= asientos.length) {
                         JOptionPane.showMessageDialog(
                             null, 
                             "Fila " + letraStr + " no existe en esta sala.", 
@@ -381,12 +389,12 @@ public class Cliente extends Persona {
                             JOptionPane.ERROR_MESSAGE
                         );
                         continue;
-                    }
-
-                    if (asientoActual.endsWith("[O]")) {
+                    } else if (asientoActual != null && asientoActual.endsWith("[O]")) {
                         // Marcar asiento como reservado
                         asientos[indiceFila][indiceColumna] = asientoActual.replace("[O]", "[X]");
-                        ultimoAsientoReservado = asientoSeleccionado; // Guardamos el último para devolver
+
+                        asientosTemporales.add(asientoSeleccionado);
+                        indicesSeleccionados.add(new int[]{indiceFila, indiceColumna});
                         asientoReservado = true; // Salimos del bucle do-while
                         JOptionPane.showMessageDialog(
                             null, 
@@ -394,22 +402,6 @@ public class Cliente extends Persona {
                             "Asiento Reservado", 
                             JOptionPane.INFORMATION_MESSAGE
                         );
-
-                        ThreadBancario procesoPago = new ThreadBancario();
-                        Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
-
-                        hiloProceso.start();
-
-                        try {
-                            hiloProceso.join(); 
-                        } catch (InterruptedException e) {
-                            JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
-                            return null; // Cancelamos la compra de boletos.
-                        }
-
-                        // Creamos los boletos
-                        Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), ultimoAsientoReservado);
-                        boletosComprados.add(boleto);
                     } else if (asientoActual.endsWith("[X]")) {
                         JOptionPane.showMessageDialog(
                             null, 
@@ -437,41 +429,70 @@ public class Cliente extends Persona {
                 } 
             } while (!asientoReservado);
         }
+
+        int confirmacion = JOptionPane.showConfirmDialog(null, 
+            "¿Confirmas la compra de " + asientosASeleccionar + " boletos?", 
+            "Confirmar Compra", JOptionPane.YES_NO_OPTION);
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            try {
+                // Proceso de Pago
+                ThreadBancario procesoPago = new ThreadBancario();
+                Thread hiloProceso = new Thread(procesoPago, "Compra de boletos");
+                hiloProceso.start();
+                hiloProceso.join(); 
+
+                // Crear los boletos y agregarlos
+                for (String asiento : asientosTemporales) {
+                    Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), asiento);
+                    boletosComprados.add(boleto);
+                }
+                gestor.guardarAsientos(funcion, asientos);
+            } catch (InterruptedException e) {
+                JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido. Revertiendo reservas.", "Error de Pago", JOptionPane.ERROR_MESSAGE);
+            
+                for (int[] indices : indicesSeleccionados) {
+                    String asientoX = asientos[indices[0]][indices[1]];
+                    asientos[indices[0]][indices[1]] = asientoX.replace("[X]", "[O]");
+                }
+                
+                try {
+                    gestor.guardarAsientos(funcion, asientos);
+                } catch (IOException ioe) {
+                    JOptionPane.showMessageDialog(null, "Error al guardar la reversión: " + ioe.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                return new ArrayList<>(); // Devolver lista vacía
+                
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Error al guardar los boletos comprados: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                // Podrías decidir si revertir aquí si el error de guardar implica que la reserva no es segura.
+            }
+        } else {
+            // Cancelación del Usuario: Revertir y Guardar
+            if (!indicesSeleccionados.isEmpty()) { 
+                JOptionPane.showMessageDialog(null, "Compra cancelada por el usuario. Revertiendo asientos seleccionados.", "Cancelado", JOptionPane.WARNING_MESSAGE);
+                
+                for (int[] indices : indicesSeleccionados) {
+                    // Revertir el asiento a disponible
+                    String asientoX = asientos[indices[0]][indices[1]];
+                    asientos[indices[0]][indices[1]] = asientoX.replace("[X]", "[O]");
+                }
+                
+                try {
+                    // Es vital guardar el estado revertido para que esté disponible para otros usuarios
+                    gestor.guardarAsientos(funcion, asientos);
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(null, "Error al guardar la reversión: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }  
         return boletosComprados;
     }
 
     // Método auxiliar para ver asientos según la sala
-    /*
-     * Formato de asientos según sala:
-     * Salas A:
-     *  1 2 3 ... 15
-     * A
-     * B
-     * c
-     * ...
-     * J
-     * 
-     * Sala B:
-     *  1 2 3 ... 15
-     * A
-     * B
-     * C
-     * ...
-     * J
-     * En la sala B no hay asientos 1-4 y 12-15 en las filas A-D
-     * 
-     * Sala VIP:
-     *  1 2 * * 3 4 * * 5 6
-     * A
-     * B
-     * C
-     * ...
-     * H
-     * Los asientos con * representan pasillos, no habrá asientos en esas posiciones
-     */ 
     
-    public static void verAsientos(Funcion funcion) {
-        String[][] asientos = funcion.cargarAsientos();
+    public static void verAsientos(String[][] asientos, GestorDeArchivos gestor) {
+
         StringBuilder asientosStr = new StringBuilder();
 
         // Si la matriz de asientos está vacía o es nula, no imprimimos nada
@@ -483,28 +504,36 @@ public class Cliente extends Persona {
             asientosStr.append("   "); // Espacio para la letra de fila
             for (int j = 0; j < numColumnas; j++) {
                 // Formato de impresión estandarizada para las columnas
-                asientosStr.append(String.format(" %-3s", j + 1)); 
+                asientosStr.append(String.format(" %-4s", j + 1)); 
             }
             asientosStr.append("\n"); 
 
             for (int i = 0; i < asientos.length; i++) {
                 // Añadir la letra de la fila 
-                String letraFila = funcion.obtenerLetraFila(i); 
-                asientosStr.append(letraFila).append(" ");
+                String letraFila = gestor.obtenerLetraFila(i); 
+                asientosStr.append(letraFila).append("   ");
                 
                 for (String asiento : asientos[i]) {
                     // Formato de impresión estandarizada para el asiento
-                    asientosStr.append(String.format(" %-3s", asiento));
+                    asientosStr.append(String.format(" %-4s", asiento));
                 }
                 asientosStr.append("\n"); 
             }
         }
 
+        // Mostramos los asientos en un JScrollPane
+        JTextArea textArea = new JTextArea(asientosStr.toString());
+        textArea.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 14)); 
+        textArea.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(textArea); 
+        scrollPane.setPreferredSize(new java.awt.Dimension(600, 400));
+
         JOptionPane.showMessageDialog(
-            null, 
-            asientosStr.toString(), 
-            "Asientos Disponibles", 
-            JOptionPane.PLAIN_MESSAGE
+        null, 
+        scrollPane, // <-- Pasamos el JScrollPane con el JTextArea formateado
+        "Asientos Disponibles", 
+        JOptionPane.PLAIN_MESSAGE
         );
     }
 

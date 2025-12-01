@@ -11,6 +11,7 @@ public class GestorDeArchivos {
     private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
     private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
+    private final String RUTA_BASE_ASIENTOS = "asientosFuncion_";
     private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes 
     private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
     private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para leer si una orden ya está lista o aún no
@@ -215,7 +216,7 @@ public class GestorDeArchivos {
         BufferedReader objetoReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES));
         String linea;
         while((linea = objetoReader.readLine()) != null){
-            String[] partes = linea.split("|");
+            String[] partes = linea.split("\\|");
             String idPelicula = partes[0];
             String fecha = partes[1];
             String hora = partes[2];
@@ -430,138 +431,166 @@ public class GestorDeArchivos {
         return contenido.toString().trim();
     }
 
-    public void guardarAsientosA(String[][] asientos) throws IOException {
-        FileWriter objetoFileWriter = new FileWriter("asientosA.txt",true);
-        for (int i = 0; i < asientos.length; i++) {
-            for (int j = 0; j < asientos[i].length; j++) {
-                objetoFileWriter.write(asientos[i][j]);
-                // Agrega una tabulación como separador, excepto después del último elemento de la fila
-                if (j < asientos[i].length - 1) {
-                    objetoFileWriter.write("\t");
-                }
-            }
-            // Agrega un salto de línea después de cada fila, excepto la última
-            if (i < asientos.length - 1) {
-                objetoFileWriter.write("\n");
-            }
-        }
-        objetoFileWriter.close();
+    // Generar el nombre del archivo de asientos de una función
+    public String generarNombreArchivo(Funcion funcion) {
+        // Tomamos los atributos clave y normalizamos:
+        String pelicula = funcion.getNombrePelicula().replaceAll("\\s+", "_").toUpperCase();
+        String sala = funcion.getSala().replaceAll("\\s+", "_").toUpperCase();
+        String fecha = funcion.getFecha().replaceAll("[/-]", ""); 
+        String hora = funcion.getHora().replaceAll("[:]", "");
+
+        // Formato del identificador
+        String nombre = pelicula + "_" + sala + "_" + fecha + "_" + hora + ".txt";
+        
+        // Devolvemos la ruta completa
+        return RUTA_BASE_ASIENTOS + nombre;
     }
 
-    public String[][] cargarAsientosA(int numFilas, int numColumnas) {
+    public void guardarAsientos(Funcion funcion, String[][] asientos) throws IOException {
+        String rutaArchivo = generarNombreArchivo(funcion);
+
+        if (asientos == null) {
+            throw new IllegalArgumentException("El mapa de asientos de la función no puede ser nulo al guardar.");
+        }
+        
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(rutaArchivo))) {
+            for (int i = 0; i < asientos.length; i++) {
+                StringBuilder linea = new StringBuilder();
+                for (int j = 0; j < asientos[i].length; j++) {
+                    linea.append(asientos[i][j]);
+                    if (j < asientos[i].length - 1) {
+                        linea.append("\t");
+                    }
+                }
+                bw.write(linea.toString());
+                // Agregamos un salto de línea para separar las filas
+                bw.newLine(); 
+            }
+        } catch (IOException e) {
+            throw new IOException("Fallo al guardar el mapa de asientos en " + rutaArchivo, e); 
+        }
+    }
+
+    public String[][] cargarAsientos(Funcion funcion) {
+        String rutaArchivo = generarNombreArchivo(funcion);
+        File archivo = new File(rutaArchivo);
+        
+        if (!archivo.exists()) {
+            
+            // Inicializar la matriz de asientos
+            String[][] asientosIniciales = null;
+            switch (funcion.getSala().toUpperCase()) {
+                case "A", "SALA A" -> asientosIniciales = obtenerAsientosA();
+                case "B", "SALA B" -> asientosIniciales = obtenerAsientosB();
+                case "VIP", "SALA VIP" -> asientosIniciales = obtenerAsientosVIP();
+            }
+            
+            try {
+                // Guardamos la matriz inicial en el nuevo archivo
+                guardarAsientos(funcion, asientosIniciales); 
+                System.out.println("Archivo de asientos inicial creado con éxito en: " + rutaArchivo);
+                return asientosIniciales; // Devolvemos el mapa inicial creado
+            } catch (IOException e) {
+                return null; // Error grave de escritura
+            }
+        }
+
+        List<String[]> filasAsientos = new ArrayList<>();
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                // Se usa un tabulador para separar los asientos
+                String[] asientosEnFila = linea.split("\t"); 
+                filasAsientos.add(asientosEnFila);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al leer el archivo de asientos: " + e.getMessage());
+            return null; // En caso de error de lectura
+        }
+
+        if (filasAsientos.isEmpty()) {
+            // Podría ser un archivo vacío, lo tratamos como un error o volvemos a inicializar
+            return null; 
+        }
+        
+        // Convertimos la lista dinámica a String[][]
+        int numFilas = filasAsientos.size();
+        int numColumnas = filasAsientos.get(0).length;
         String[][] asientos = new String[numFilas][numColumnas];
-        try (BufferedReader reader = new BufferedReader(new FileReader("asientosA.txt"))) {
-            String linea;
-            int fila = 0;
+        
+        for (int i = 0; i < numFilas; i++) {
+            // Copiamos el array de Strings directamente
+            asientos[i] = filasAsientos.get(i); 
+        }
+        return asientos;
+    }
 
-            while ((linea = reader.readLine()) != null) {
-                // Divide la línea por el delimitador (la coma)
-                String[] datosFila = linea.split("\t");
+    // Funciones para obtener los asientos
+
+    // Función para convertir un valor numérico de fila a letra
+    public String obtenerLetraFila(int fila) {
+        char letra = (char) ('A' + fila); // Convierte el número de fila a letra (0 -> A, 1 -> B, etc.)
+        return String.valueOf(letra);
+    }
+
+    public int obtenerNumeroFila(String letra) {
+        return letra.charAt(0) - 'A'; // Convierte la letra de fila a número (A -> 0, B -> 1, etc.)
+    }
+
+    
+    // Función para obtener los asientos de la sala, así como su disponibilidad
+    public String[][] obtenerAsientosA() {
+        String[][] asientosA = new String[10][15];
+        for (int i = 0; i < asientosA.length; i++) {
+            String fila = obtenerLetraFila(i);
+            for (int j = 0; j < asientosA[i].length; j++) {
+                int columna = j + 1;
+                asientosA[i][j] = fila + columna + "[O]"; // O representa un asiento disponible
+            }
+        }
+        return asientosA;
+    }
+
+    public String[][] obtenerAsientosB() {
+        String[][] asientosB = new String[10][15];
+        for (int i = 0; i < asientosB.length; i++) {
+            String fila = obtenerLetraFila(i);
+
+            for (int j = 0; j < asientosB[i].length; j++) {
+
+                boolean esFilaPasillo = (i >= 0 && i <= 3); 
                 
-                // Verifica que la fila y la columna sean las esperadas
-                if (fila < numFilas && datosFila.length == numColumnas) {
-                    for (int columna = 0; columna < numColumnas; columna++) {
-                        asientos[fila][columna] = datosFila[columna].trim();
-                    }
-                    fila++;
-                } else {
-                    System.err.println("Error: Las dimensiones del archivo no coinciden con las esperadas.");
-                    return null; // Retorna null o el array vacío si hay un error de formato
-                }
-            }
-            return asientos;
-
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public void guardarAsientosVIP(String[][] asientos) throws IOException {
-        FileWriter objetoFileWriter = new FileWriter("asientosVIP.txt",true);
-        for (int i = 0; i < asientos.length; i++) {
-            for (int j = 0; j < asientos[i].length; j++) {
-                objetoFileWriter.write(asientos[i][j]);
-                // Agrega una tabulación como separador, excepto después del último elemento de la fila
-                if (j < asientos[i].length - 1) {
-                    objetoFileWriter.write("\t");
-                }
-            }
-            // Agrega un salto de línea después de cada fila, excepto la última
-            if (i < asientos.length - 1) {
-                objetoFileWriter.write("\n");
-            }
-        }
-        objetoFileWriter.close();
-    }
-
-    public String[][] cargarAsientosVIP(int numFilas, int numColumnas) {
-        String[][] asientosVIP = new String[numFilas][numColumnas];
-        try (BufferedReader reader = new BufferedReader(new FileReader("asientosVIP.txt"))) {
-            String linea;
-            int fila = 0;
-
-            while ((linea = reader.readLine()) != null) {
-                // Divide la línea por el delimitador
-                String[] datosFila = linea.split("\t");
+                boolean esPasilloIzquierdo = (j >= 0 && j <= 3); 
                 
-                // Verifica que la fila y la columna sean las esperadas
-                if (fila < numFilas && datosFila.length == numColumnas) {
-                    for (int columna = 0; columna < numColumnas; columna++) {
-                        asientosVIP[fila][columna] = datosFila[columna].trim();
-                    }
-                    fila++;
+                boolean esPasilloDerecho = (j >= 11 && j <= 14); 
+
+                if (esFilaPasillo && (esPasilloIzquierdo || esPasilloDerecho)) {
+                    asientosB[i][j] = "    "; 
                 } else {
-                    return null; // Retorna null o el array vacío si hay un error de formato
+                    int columna = j + 1;
+                    asientosB[i][j] = fila + columna + "[O]"; // O representa un asiento disponible
                 }
             }
-            return asientosVIP;
-
-        } catch (IOException e) {
-            return null;
         }
+        return asientosB;
     }
 
-    public void guardarAsientosB(String[][] asientos) throws IOException {
-        FileWriter objetoFileWriter = new FileWriter("asientosB.txt",true);
-        for (int i = 0; i < asientos.length; i++) {
-            for (int j = 0; j < asientos[i].length; j++) {
-                objetoFileWriter.write(asientos[i][j]);
-                // Agrega una tabulación como separador, excepto después del último elemento de la fila
-                if (j < asientos[i].length - 1) {
-                    objetoFileWriter.write("\t");
-                }
-            }
-            // Agrega un salto de línea después de cada fila, excepto la última
-            if (i < asientos.length - 1) {
-                objetoFileWriter.write("\n");
-            }
-        }
-        objetoFileWriter.close();
-    }
-
-    public String[][] cargarAsientosB(int numFilas, int numColumnas) {
-        String[][] asientos = new String[numFilas][numColumnas];
-        try (BufferedReader reader = new BufferedReader(new FileReader("asientosB.txt"))) {
-            String linea;
-            int fila = 0;
-
-            while ((linea = reader.readLine()) != null) {
-                String[] datosFila = linea.split("\t");
-                
-                // Verifica que la fila y la columna sean las esperadas
-                if (fila < numFilas && datosFila.length == numColumnas) {
-                    for (int columna = 0; columna < numColumnas; columna++) {
-                        asientos[fila][columna] = datosFila[columna].trim();
-                    }
-                    fila++;
+    public String[][] obtenerAsientosVIP() {
+        String[][] asientosVIP = new String[8][10];
+        for (int i = 0; i < asientosVIP.length; i++) {
+            String fila = obtenerLetraFila(i);
+            for (int j = 0; j < asientosVIP[i].length; j++) {
+                boolean esFilaIzqPasillo = (i >= 2 && i <= 3); 
+                boolean esFilaDerPasillo = (i >= 6 && i <= 7); 
+                if (esFilaIzqPasillo || esFilaDerPasillo) {
+                asientosVIP[i][j] = "    ";
                 } else {
-                    return null; 
+                    int columna = j + 1;
+                    asientosVIP[i][j] = fila + columna + "[O]"; // O representa un asiento disponible
                 }
             }
-            return asientos;
-
-        } catch (IOException e) {
-            return null;
         }
+        return asientosVIP;
     }
 }

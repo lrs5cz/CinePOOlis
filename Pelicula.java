@@ -1,3 +1,7 @@
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Pelicula {
     private String nombrePelicula, genero, sinopsis, duracion, idPelicula;
 
@@ -53,18 +57,52 @@ public class Pelicula {
 
     // Métodos
 
-    public String generarIdPelicula() {
-        // Genera un ID con las iniciales de la película
-        String[] palabras = nombrePelicula.split(" ");
-        StringBuilder id = new StringBuilder();
-        for (String palabra : palabras) {
-            id.append(palabra.charAt(0));
+    public boolean unicoIdPelicula(List<Pelicula> cartelera, String id) {
+        Pelicula pelicula = null;
+        for (Pelicula p : cartelera) {
+            if (p.getIdPelicula().equals(id.toUpperCase())) {
+                pelicula = p;
+                break;
+            }
         }
-        return id.toString().toUpperCase();
+        
+        if (pelicula == null) return true;
+        else return false;
+    }
+
+    public String generarIdPelicula() {
+        GestorDeArchivos gestor = new GestorDeArchivos();
+        // Inicializamos
+        StringBuilder id = new StringBuilder();
+        List<Pelicula> cartelera = new ArrayList<>();
+
+        try {
+            // Genera un ID con las iniciales de la película
+            cartelera = gestor.cargarPeliculas();
+            String[] palabras = nombrePelicula.split(" "); 
+            for (String palabra : palabras) {
+                if (!palabra.isEmpty()) id.append(palabra.charAt(0));
+            }
+        } catch (IOException e) {
+            
+        }
+
+        // Almacenamos el id actual
+        String idBase = id.toString().toUpperCase();
+        String idFinal = idBase;
+        int contador = 1;
+
+        // Si el id existe, le añade un número al nuevo ID para que sea diferente
+        while (!unicoIdPelicula(cartelera, idFinal)) {
+            idFinal = idBase + contador;
+            contador++;
+        }
+
+        return idFinal;
     }
 
     @Override
     public String toString() {
-        return nombrePelicula + "|" + genero + "|" + sinopsis + "|" + duracion;
+        return nombrePelicula + "|" + genero + "|" + sinopsis + "|" + duracion + "|" + idPelicula;
     }
 }

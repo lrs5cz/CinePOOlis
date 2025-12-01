@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -51,7 +50,7 @@ public class ThreadIntegrador implements Runnable {
         return tipoOrden;
     }
 
-    private Vendedor obtenerVendedor (List<Persona> personas) {
+    private Vendedor obtenerVendedor (List<Vendedor> vendedores) {
         ZonedDateTime tiempo = ZonedDateTime.now();
         int hora = tiempo.getHour();
         int diaInt = tiempo.getDayOfWeek().getValue();
@@ -65,15 +64,6 @@ public class ThreadIntegrador implements Runnable {
             case 7 -> "Domingo";
             default -> "";
         };
-        
-        List<Vendedor> vendedores = new ArrayList<>();
-
-        for (Persona p : personas) {
-            // Solo considerar instancias de Vendedor (empleado de dulcería)
-            if (p instanceof Vendedor v) {
-                vendedores.add(v);
-            }
-        }
 
         for (Vendedor v : vendedores) {
             if (!(dia.equals(v.getDiaDescanso()))) {
@@ -102,9 +92,9 @@ public class ThreadIntegrador implements Runnable {
             JOptionPane.showMessageDialog(null, "Esperando asignación de orden", "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
             simularPausa(20, 40); 
             
-            // Cargar usuarios (vendedores)
-            List<Persona> personas = gestor.cargarUsuarios();
-            vendedorAsignado = obtenerVendedor(personas);
+            // Cargar vendedores
+            List<Vendedor> vendedores = gestor.cargarVendedores();
+            vendedorAsignado = obtenerVendedor(vendedores);
             
             if (vendedorAsignado == null) {
                 JOptionPane.showMessageDialog(null, "No hay vendedores disponibles para atender la orden en este momento.", "Error de Asignación", JOptionPane.ERROR_MESSAGE);
