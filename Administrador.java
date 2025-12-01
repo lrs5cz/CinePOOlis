@@ -182,7 +182,7 @@ public class Administrador extends Empleado {
         } while (opcionint != 0);
     }
 //funcion qye registra a los empleados
-    public void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Persona> usuariosEnSistema) {
+    public void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Administrador> administradores) {
         String nombre, apellidoP, apellidoM, numeroCelular, nickname = "";
         String correo = "", password = "", turno = "";
         int edad = 0;
@@ -232,7 +232,7 @@ public class Administrador extends Empleado {
                 "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                 if (numeroCelular == null) return;
 
-                if (v.existeNumeroCelular(usuariosEnSistema, numeroCelular)) {
+                if (v.existeNumeroAdmin(administradores, numeroCelular)) {
                     JOptionPane.showMessageDialog(null, "Error. El número de celular ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else if (numeroCelular.length() != 10) {
                     JOptionPane.showMessageDialog(null, "Error. Número celular inválido", "Error", JOptionPane.ERROR_MESSAGE);
@@ -247,7 +247,7 @@ public class Administrador extends Empleado {
             "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                 if (nickname == null) return;
                 
-                if (v.existeNickname(usuariosEnSistema, nickname)) {
+                if (v.existeNicknameAdmin(administradores, nickname)) {
                     JOptionPane.showMessageDialog(null, "Error. El nickname ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     celularUnico = true;
@@ -265,7 +265,7 @@ public class Administrador extends Empleado {
                     if (!(correo.endsWith("@gmail.com") || correo.endsWith("@hotmail.com") ||
                     correo.endsWith("@yahoo.com") || correo.endsWith("@outlook.com"))) {
                         throw new MailMismatchException("Error. El correo ingresado es inválido");
-                    } else if(v.existeCorreo(usuariosEnSistema, correo)) {
+                    } else if(v.existeCorreoAdmin(administradores, correo)) {
                         JOptionPane.showMessageDialog(null, "Error, el correo ya ha sido registrado, intenta nuevamente", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(null, "Correo validado", "Verificación", JOptionPane.INFORMATION_MESSAGE);
@@ -338,7 +338,7 @@ public class Administrador extends Empleado {
             }
         }
               // Guardar en archivo
-            gestor.guardarUsuariosEnArchivo(empleado);
+            gestor.guardarUsuarios(empleado);
             //usuariosEnSistema.add(personaRegistrada);
 
             JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
@@ -348,10 +348,3 @@ public class Administrador extends Empleado {
         }
     }
 }
-
-
-
-
-
-
-
