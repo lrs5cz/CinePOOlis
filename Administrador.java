@@ -151,7 +151,10 @@ public class Administrador extends Empleado {
                 case 1 -> agregarFuncion(gestor);
                 case 2 -> registroEmpleado(gestor, v, administradores);
                 // case 3 -> 
-                default -> JOptionPane.showMessageDialog(null, "Cerrando sesión...");
+                default -> {
+                    JOptionPane.showMessageDialog(null, "Cerrando sesión...");
+                    return;
+                }
             }
             // agregarFuncion(funciones, cartelera, opcion)
         } while (true);
