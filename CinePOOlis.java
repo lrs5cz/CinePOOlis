@@ -156,6 +156,9 @@ public class CinePOOlis {
 
             Cuenta cuenta = new Cuenta(nickname, password, correo);
             Cliente cliente = new Cliente(nombre, apellidoP, apellidoM, edad, numeroCelular, cuenta, tarjetaBancaria);
+            
+            // Añadimos el nuevo cliente a la lista para asegurarnos de que no haya duplicaciones
+            clientes.add(cliente);
             gestor.guardarClienteEnArchivo(cliente);
             JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente!", "Registro completado", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
@@ -166,6 +169,7 @@ public class CinePOOlis {
     }
 
     public static void accesoSistema(GestorDeArchivos gestor, Validaciones v) {
+        // Inicializamos variables y el tiempo
         Persona usuario = null;
         boolean inicioSesion = false;
         try {
@@ -210,13 +214,16 @@ public class CinePOOlis {
             // Casteamos usuario según su instancia
             if (usuario instanceof Cliente) {
                 Cliente cliente = (Cliente) usuario;
+                // Agregaremos validación de horario para que el cliente no pueda acceder al cine antes de las 8 am y después de las 23:59pm
                 Cliente.menuCliente(gestor, cliente);
             } else if (usuario instanceof Administrador) {
+                // Agregaremos una validación para que solo los administradores que trabajan entre semana puedan acceder de lunes a viernes y viceversa
                 Administrador admin = (Administrador) usuario;
                 Administrador.menuAdmin(gestor, v, admin); 
             } else if (usuario instanceof Vendedor) {
+                // Agregaremos una validación para que los vendedores no puedan acceder a su trabajo fuera de su turno o en su día de descanso
                 Vendedor vendedor = (Vendedor) usuario;
-                // Vendedor.menuVendedor(parámetros); 
+                Vendedor.menuVendedor(gestor, vendedor); 
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

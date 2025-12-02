@@ -40,7 +40,7 @@ public class Combo {
     // Métodos
 
     public Combo crearComboAmix() {
-        this.nombreCombo = "Combo amix";
+        this.nombreCombo = "Combo Amix";
         this.alimentosCombo = new ArrayList<>();
         this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 80)); // Precio original: 80
         this.alimentosCombo.add(new Alimento("Refresco", "Jumbo", 60));
@@ -75,7 +75,7 @@ public class Combo {
     }
 
     public Combo crearComboBuenTrio() {
-        this.nombreCombo = "Combo Buen Trio"; 
+        this.nombreCombo = "Combo Buen Trío"; 
         this.alimentosCombo = new ArrayList<>();
         this.alimentosCombo.add(new Alimento("Palomitas", "Mega", 90)); 
         this.alimentosCombo.add(new Alimento("Nachos", "Mega", 100)); 
@@ -94,7 +94,7 @@ public class Combo {
     }
 
     public Combo crearComboQueMeVes() {
-        this.nombreCombo = "Combo Que Me Ves";
+        this.nombreCombo = "Combo Qué Me Ves";
         this.alimentosCombo = new ArrayList<>();
         this.alimentosCombo.add(new Alimento("Palomitas", "Jumbo", 80)); 
         this.alimentosCombo.add(new Alimento("Nachos", "Jumbo", 90)); 
@@ -118,5 +118,13 @@ public class Combo {
             this.precioCombo += a.getPrecio();
         }
         return this; // Retorna el combo creado
+    }
+
+    public void mostrarOrden () {
+        StringBuilder ordenStr = new StringBuilder("Detalles de la orden:\n\nAlimentos: ");
+        for (Alimento a : getAlimentosCombo()) {
+            ordenStr.append(a).append("\t");
+        }
+        ordenStr.append("\n\nPrecio: ").append(getPrecioCombo());
     }
 }

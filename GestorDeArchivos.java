@@ -15,7 +15,7 @@ public class GestorDeArchivos {
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
     private final String RUTA_BASE_ASIENTOS = "asientosFuncion_";
     private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes 
-    private final String HISTORIAL_VENDEDOR_PREFIX = "historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
+    private final String HISTORIAL_VENDEDOR_PREFIX = "historialesVendedores/historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
     private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para leer si una orden ya está lista o aún no
 
     public void guardarUsuarios (Persona persona) throws IOException {
@@ -235,7 +235,7 @@ public class GestorDeArchivos {
 
     private Pelicula buscarPeliculaPorId(List<Pelicula> cartelera, String id) {
         for (Pelicula p : cartelera) {
-            if (p.getIdPelicula().equals(id)) { 
+            if (p.getIdPelicula().toUpperCase().equals(id.toUpperCase())) { 
                 return p;
             }
         }
@@ -308,10 +308,11 @@ public class GestorDeArchivos {
         return listaDeBoletosDelArchivo;
     }
 
-    public List<Boleto> cargarBoletosPorFuncion (List<Boleto> boletos, Funcion funcion) throws IOException {
+    public List<Boleto> cargarBoletosPorFuncion (List<Boleto> boletos, Funcion funcion, Cliente cliente) throws IOException {
         List<Boleto> listaDeBoletosDeLaFuncion = new ArrayList<>();
         for (Boleto b : boletos) {
-            if(boletoInFuncion(funcion, b)) listaDeBoletosDeLaFuncion.add(b);
+            if(boletoInFuncion(funcion, b) && b.getNicknameComprador().toUpperCase().equals(cliente.getNicknameCuenta().toUpperCase()))
+                listaDeBoletosDeLaFuncion.add(b);
         }
         return listaDeBoletosDeLaFuncion;
     }
@@ -380,7 +381,6 @@ public class GestorDeArchivos {
     }
 
     public void guardarNotificacionCliente(String clave) throws IOException {
-        // Usamos HISTORIAL_DULCERIA para este propósito, como se define en el código original.
         FileWriter objetoFileWriter = new FileWriter(HISTORIAL_DULCERIA, true);
         objetoFileWriter.write(clave + "\n");
         objetoFileWriter.close();
@@ -392,7 +392,20 @@ public class GestorDeArchivos {
         FileWriter objetoFileWriter = new FileWriter(nombreArchivo, true); // true para adjuntar
         objetoFileWriter.write(logEntry + "\n");
         objetoFileWriter.close();
-    }  
+    }
+
+    public List<String> cargarHistorialVendedor(String idVendedor) throws IOException {
+        List<String> ordenesDeUsuario = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt"))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                    ordenesDeUsuario.add(linea);
+            }
+        }
+        return ordenesDeUsuario;
+    } 
+
     
     public String buscarOrdenEnHistorialVendedor(String claveOrden, String idVendedor) throws IOException {
         String nombreArchivo = HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt";

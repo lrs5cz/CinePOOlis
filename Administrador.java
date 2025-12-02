@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -10,7 +12,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Map;
 
 public class Administrador extends Empleado {
     // Atributos
@@ -217,6 +218,7 @@ public class Administrador extends Empleado {
     //Función para mostrar el menu del administrador
     public static void menuAdmin(GestorDeArchivos gestor, Validaciones v, Administrador admin) throws IOException {
         List<Administrador> administradores = gestor.cargarAdmin();
+        List<Vendedor> vendedores = gestor.cargarVendedores();
         do {
             String[] opciones = {"Agregar Película a cartelera", "Agregar Función", "Registrar Empleado", "Ver boletos comprados de un cliente", "Cerrar sesión"};
             int opcion = JOptionPane.showOptionDialog(null, "Bienvenido/a, " + admin.getNombre() + 
@@ -226,7 +228,7 @@ public class Administrador extends Empleado {
             switch (opcion) {
                 case 0 -> agregarPeliculaACartelera(gestor);
                 case 1 -> agregarFuncion(gestor);
-                case 2 -> registroEmpleado(gestor, v, administradores);
+                case 2 -> registroEmpleado(gestor, v, administradores, vendedores);
                 case 3 -> verBoletosComprados(gestor, v);
                 default -> {
                     JOptionPane.showMessageDialog(null, "Cerrando sesión...");
@@ -237,7 +239,7 @@ public class Administrador extends Empleado {
         } while (true);
     }
     // Funcion que registra a los empleados
-    public static void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Administrador> administradores) {
+    public static void registroEmpleado(GestorDeArchivos gestor, Validaciones v, List<Administrador> administradores, List<Vendedor> vendedores) {
         String nombre, apellidoP, apellidoM, numeroCelular = "", nickname = "";
         String correo = "", password = "", turno = "";
         int edad = 0;
@@ -283,7 +285,7 @@ public class Administrador extends Empleado {
                 "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                 if (numeroCelular == null) return;
 
-                if (v.existeNumeroAdmin(administradores, numeroCelular)) {
+                if (v.existeNumeroAdmin(administradores, numeroCelular) || v.existeNumeroVendedor(vendedores, numeroCelular)) {
                     JOptionPane.showMessageDialog(null, "Error. El número de celular ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else if (numeroCelular.length() != 10) {
                     JOptionPane.showMessageDialog(null, "Error. Número celular inválido", "Error", JOptionPane.ERROR_MESSAGE);
@@ -298,7 +300,7 @@ public class Administrador extends Empleado {
             "Registro de clientes", JOptionPane.INFORMATION_MESSAGE);
                 if (nickname == null) return;
                 
-                if (v.existeNicknameAdmin(administradores, nickname)) {
+                if (v.existeNicknameAdmin(administradores, nickname) || v.existeNicknameVendedor(vendedores, nickname)) {
                     JOptionPane.showMessageDialog(null, "Error. El nickname ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     nicknameUnico = true;
@@ -316,7 +318,7 @@ public class Administrador extends Empleado {
                     if (!(correo.endsWith("@gmail.com") || correo.endsWith("@hotmail.com") ||
                     correo.endsWith("@yahoo.com") || correo.endsWith("@outlook.com"))) {
                         throw new MailMismatchException("Error. El correo ingresado es inválido");
-                    } else if(v.existeCorreoAdmin(administradores, correo)) {
+                    } else if(v.existeCorreoAdmin(administradores, correo) || v.existeCorreoVendedor(vendedores, correo)) {
                         JOptionPane.showMessageDialog(null, "Error, el correo ya ha sido registrado, intenta nuevamente", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(null, "Correo validado", "Verificación", JOptionPane.INFORMATION_MESSAGE);
@@ -394,10 +396,18 @@ public class Administrador extends Empleado {
                 JOptionPane.showMessageDialog(null, "Registro cancelado.");
                 return;
             }
+        }   
+
+        // Guardamos el empleado en su respectiva lista para evitar duplicaciones al regsitrar más de un usuario en la misma ejecución
+        if (empleado instanceof Administrador) {
+            Administrador admin = (Administrador) empleado;
+            administradores.add(admin);
+        } else if (empleado instanceof Vendedor) {
+            Vendedor vendedor = (Vendedor) empleado;
+            vendedores.add(vendedor);
         }
-              // Guardar en archivo
-            gestor.guardarUsuarios(empleado);
-            //usuariosEnSistema.add(personaRegistrada);
+        // Guardar en archivo
+        gestor.guardarUsuarios(empleado);
 
             JOptionPane.showMessageDialog(null, "Empleado registrado correctamente.");
 
@@ -405,17 +415,18 @@ public class Administrador extends Empleado {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    public static void verBoletosComprados(GestorDeArchivos gestor,Validaciones v){
+
+    public static void verBoletosComprados(GestorDeArchivos gestor, Validaciones v) {
         try{
             List<Cliente> todosClientes = gestor.cargarClientes();
             List<Pelicula> cartelera = gestor.cargarPeliculas();
-            List<Boleto>todosBoletos = todosBoletos = gestor.cargarBoletosEnArchivo(cartelera);
+            List<Boleto> todosBoletos = gestor.cargarBoletosEnArchivo(cartelera);
             //
             if(todosClientes.isEmpty() || todosBoletos.isEmpty()){
                 JOptionPane.showMessageDialog(null, "No hay clientes registrados, o no se han comprado boletos aun");
                 return;
             }
-            //Hacemos la busqueda del nickname
+            // Hacemos la busqueda del nickname
             String busqueda = JOptionPane.showInputDialog("Ingrese el nickname(compelto o partde de el) del cliente");
             if(busqueda == null || busqueda.trim().isEmpty()){
                 return;
@@ -424,8 +435,8 @@ public class Administrador extends Empleado {
             String busquedaLC = busqueda.toLowerCase().trim();
             // Encontrar clientes coincidentes
             List<Cliente> clientesCoincidentes = new ArrayList<>();
-            //usamos un hasMap que es como una HashTable pero esta si acepta valores nulos por si aun no ha comprado boletos
-            Map<String, Integer> conteoBoletosporNickanme = new HashMap<>();
+            //usamos un HashMap que es como una HashTable pero esta si acepta valores nulos por si aun no ha comprado boletos
+            Map<String, Integer> conteoBoletosPorNickanme = new HashMap<>();
 
             for(Cliente cliente: todosClientes){
                 String nicknameCliente = cliente.getNicknameCuenta();
@@ -439,32 +450,31 @@ public class Administrador extends Empleado {
                             boletosComprados++;
                         }
                     }
-                    conteoBoletosporNickanme.put(nicknameCliente,boletosComprados);
+                    conteoBoletosPorNickanme.put(nicknameCliente,boletosComprados);
                 }
             }
             if(clientesCoincidentes.isEmpty()){
                 JOptionPane.showMessageDialog(null, "No se encontraron clientes con el nickname ingresado");
                 return;
             }
-            //Mostramos la lista de los clientes que coindiden y el numero de boletos
-            //Hacemos un stringbuilder para poder agregar mas facil los clientes e imprimirlos mas facil
+            // Mostramos la lista de los clientes que coinciden y el numero de boletos
+            // Hacemos un stringbuilder para poder agregar mas facil los clientes e imprimirlos mas facil
             StringBuilder listaOp = new StringBuilder("Clientes encontrados:\n");
             for(int i = 0; i < clientesCoincidentes.size(); i++){
                 Cliente c = clientesCoincidentes.get(i);
                 //usamos getOrDefault para obtener el valor asociado a una clave del mapa(Cantidad de boletos)
-                int cantidad = conteoBoletosporNickanme.getOrDefault(c.getNicknameCuenta(), 0);
-                listaOp.append((i + 1)).append(". Nickname: ").append(c.getNicknameCuenta()).append(" |Boletos Comprados: ").append(cantidad).append("\n");
+                int cantidad = conteoBoletosPorNickanme.getOrDefault(c.getNicknameCuenta(), 0);
+                listaOp.append((i + 1)).append(". Nickname: ").append(c.getNicknameCuenta()).append(" | Boletos Comprados: ").append(cantidad).append("\n");
             }
             String seleccionS = JOptionPane.showInputDialog(listaOp.toString() + "\nIngrese el numero del cliente para ver la informacion del boleto");
             if(seleccionS == null) return;
             int indiceSeleccionado;
-            try{
+            try {
                 indiceSeleccionado = Integer.parseInt(seleccionS) - 1;
-            }catch(NumberFormatException e){
+            } catch(NumberFormatException e) {
                 JOptionPane.showMessageDialog(null, "Seleccion invalida");
                 return;
-            }
-            if(indiceSeleccionado < 0 || indiceSeleccionado >= clientesCoincidentes.size()){
+            } if(indiceSeleccionado < 0 || indiceSeleccionado >= clientesCoincidentes.size()){
                 JOptionPane.showMessageDialog(null, "Seleccion invalida, numero fuera de rango");
                 return;
             }
@@ -472,12 +482,11 @@ public class Administrador extends Empleado {
             String nicknameObjetivo = clienteSeleccionado.getNicknameCuenta();
             //Despues de encontrar el nickname mostramos la información
             StringBuilder detalles = new StringBuilder(); 
-            detalles.append("===Detalles de la compra===");
-            detalles.append("----------------------------------------------------");
+            detalles.append("Detalles de la compra\n\n");
             detalles.append("Nickname del comprador: ").append(nicknameObjetivo).append(("\n"));
-            detalles.append("Nombre del usuario: ").append(clienteSeleccionado.getNombre()).append(" ").append(clienteSeleccionado.getApellidoP()).append(" ").append(clienteSeleccionado.getApellidoM()).append("\n");
-            detalles.append("----------------------------------------------------");
-            //Agrupamos boletos
+            detalles.append("Nombre del usuario: ").append(clienteSeleccionado.getNombre()).append(" ").append(clienteSeleccionado.getApellidoP()).append(" ")
+            .append(clienteSeleccionado.getApellidoM()).append("\n\n");
+            // Agrupamos boletos
             Map<String, List<Boleto>> boletosPorFunción = new HashMap<>();
             for(Boleto boleto : todosBoletos){
                 if(boleto.getNicknameComprador().equals(nicknameObjetivo)){
@@ -489,14 +498,14 @@ public class Administrador extends Empleado {
             
             if(boletosPorFunción.isEmpty()){
                 detalles.append("El cliente no ha comprado boletos.");
-            }else {
+            } else {
                 //.Entry para acceder a la clave y al valor 
                 for(Map.Entry<String, List<Boleto>> entry : boletosPorFunción.entrySet()){
                     List<Boleto> boletosFunción = entry.getValue();
                     if(boletosFunción.isEmpty()) continue;
                     Boleto primerBoleto = boletosFunción.get(0);
                     //Informacion peli
-                    detalles.append("\nPelicua: ").append(primerBoleto.getNombrePelicula()).append("\n");
+                    detalles.append("\nPelícula: ").append(primerBoleto.getNombrePelicula()).append("\n");
                     detalles.append("Funcion: ").append(primerBoleto.toString());
                     detalles.append("Boletos comprados: ").append(boletosFunción.size()).append("\n");
                     //Mostramos los asientos
@@ -519,5 +528,4 @@ public class Administrador extends Empleado {
             JOptionPane.showMessageDialog(null, "Se genero un error inerperado"+e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
         }
     }
-
 }

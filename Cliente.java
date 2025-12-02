@@ -76,11 +76,7 @@ public class Cliente extends Persona {
                         comprarBoletos(cartelera, funciones, gestor, cliente);
                     }
                     case 2 -> {
-                        List<Combo> comanda = new ArrayList<>();
-                        Orden orden = new Orden(comanda); 
-                        
-                        // Asegurarse de que el método comprarDulceria se ejecute, pero sin un loop explícito aquí.
-                        comprarDulceria(orden, gestor, cliente);
+                        comprarDulceria(gestor, cliente);
                     }
                     case 3 -> {
                         revisarNotificaciones(gestor, cliente, funciones, boletos, ordenes, cartelera);
@@ -89,7 +85,7 @@ public class Cliente extends Persona {
                         // El bucle terminará y el control volverá al método llamador.
                         JOptionPane.showMessageDialog(null, "Cerrando sesión...", "Cerrar Sesión", JOptionPane.INFORMATION_MESSAGE);
                     }
-                    case JOptionPane.CLOSED_OPTION -> { // Manejo explícito del -1
+                    case JOptionPane.CLOSED_OPTION -> {
                         // El usuario cerró la ventana, también cerramos la sesión.
                         opcion = CERRAR_SESION;
                     }
@@ -602,7 +598,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar en la dulcería
-    public static void comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
+    public static void comprarDulceria (GestorDeArchivos gestor, Cliente cliente) {
 
         // Arreglo para almacenar las opciones disponibles
         String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo buen trío", "Combo ¿Qué me ves?", "Orden personalizada"};
@@ -612,7 +608,6 @@ public class Cliente extends Persona {
         String sabor = "";
         Combo combo = new Combo("", 0); // Inicialización de la variable combo
         Alimento alimento = new Alimento("", "", 0); // Inicialización de la variable alimento
-        List<Combo> comanda = orden.getOrden();
 
         try {
             // Solicitamos al usuario que elija un combo o una orden personalizada
@@ -631,20 +626,20 @@ public class Cliente extends Persona {
 
             switch(seleccion) {
                 case 0:
-                    comanda.add(combo.crearComboAmix());
+                    combo = combo.crearComboAmix();
                     break;
                 case 1:
-                    comanda.add(combo.crearComboNachos());
+                    combo = combo.crearComboNachos();
                     break;
                 case 2:
-                    comanda.add(combo.crearComboBuenTrio());  
+                    combo = combo.crearComboBuenTrio();  
                     break;
                 case 3:
-                    comanda.add(combo.crearComboQueMeVes());
+                    combo = combo.crearComboQueMeVes();
                     break;
                 case 4:
                     boolean agregarMas = true;
-                    Combo ordenPersonalizada = new Combo("Orden personalizada", 0); // Inicialización de la orden personalizada
+                    Combo ordenPersonalizada = new Combo("Orden Personalizada", 0); // Inicialización de la orden personalizada
                     while (agregarMas) {
                         int seleccionAlimento = JOptionPane.showOptionDialog(null,"¿Qué deseas ordenar?",
                         "Orden personalizada", JOptionPane.DEFAULT_OPTION,
@@ -652,6 +647,11 @@ public class Cliente extends Persona {
                         null,
                         opcionesAlimentos,
                         opcionesAlimentos[0]);
+
+                        if (seleccionAlimento == JOptionPane.CLOSED_OPTION) {
+                            agregarMas = false; // Detiene el bucle de orden personalizada
+                            continue; 
+                        }
 
                         tamanio = seleccionarTamanio(opcionesAlimentos[seleccionAlimento], tamaniosAlimentos);
         
@@ -680,19 +680,20 @@ public class Cliente extends Persona {
                             agregarMas = false;
                         }
                     }
-                    comanda.add(ordenPersonalizada);
+                    combo = ordenPersonalizada;
                     break;
             }
 
-            orden.setOrden(comanda);
-            // Creamos los hilos que muestran el proceso del pago
+            // Creamos los hilos que muestran el proceso del pago y escribimos el mensaje de las notificaciones
+            gestor.guardarMensajeNotificacion("Estamos trabajando arduamente para que tus alimentos sean deliciosos.\nPor favor, espera un poco más =D.");
+
             ThreadBancario procesoPago = new ThreadBancario();
             Thread hiloProceso = new Thread(procesoPago, "Compra en dulcería");
 
             hiloProceso.start();
             
             try {
-                hiloProceso.join(); 
+                hiloProceso.join();
             } catch (InterruptedException e) {
                 JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido: " + e.getMessage(), "Error de Pago", JOptionPane.ERROR_MESSAGE);
                 // Cancelamos la compra de boletos.
@@ -705,12 +706,13 @@ public class Cliente extends Persona {
             List<Vendedor> vendedores = gestor.cargarVendedores();
 
             // Hilo de integración
-            ThreadIntegrador integrar = new ThreadIntegrador(idOrden, orden, gestor, vendedores);
+            ThreadIntegrador integrar = new ThreadIntegrador(idOrden, combo, gestor, vendedores);
             Thread hiloIntegrador = new Thread(integrar, "Integración de Orden Dulcería");
 
+            // Se ejecuta en segundo plano
             hiloIntegrador.start();
 
-            JOptionPane.showMessageDialog(null, "Revisa la sección de notificaciones para saber \ncuando tu orden de dulcería esté lista 😉",
+            JOptionPane.showMessageDialog(null, "Revisa la sección de notificaciones para saber\ncuando tu orden de dulcería esté lista 😉",
             "Finalizar orden", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -720,12 +722,14 @@ public class Cliente extends Persona {
 
     // Método auxiliar para seleccionar el tamaño del alimento
     private static int seleccionarTamanio(String tipoAlimento, String[] tamaniosAlimentos) {
-        return JOptionPane.showOptionDialog(null, "Selecciona el tamaño de " + tipoAlimento, "Tamaño de " + tipoAlimento,
+        int tamanio = JOptionPane.showOptionDialog(null, "Selecciona el tamaño de " + tipoAlimento, "Tamaño de " + tipoAlimento,
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
                 tamaniosAlimentos,
                 tamaniosAlimentos[1]);
+        if (tamanio == -1) return -1;
+        return tamanio;
     }
 
     // Método auxiliar para obtener el sabor de las palomitas
@@ -737,6 +741,7 @@ public class Cliente extends Persona {
                 null,
                 sabores,
                 sabores[0]);
+        if (saborSeleccionado == -1) return null;
         return sabores[saborSeleccionado];
     }
 
@@ -749,6 +754,8 @@ public class Cliente extends Persona {
                 null,
                 sabores,
                 sabores[0]);
+        if (saborSeleccionado == -1) return null;
+        
         return sabores[saborSeleccionado];
     }
 
@@ -785,16 +792,16 @@ public class Cliente extends Persona {
                         break;
                     }
 
-                    StringBuilder funcionesStr = new StringBuilder("\nFunciones:");
+                    StringBuilder funcionesStr = new StringBuilder("\nFunciones:\n\n");
                     int i = 1;
                     for (Funcion f : funcionesConBoleto) {
                         funcionesStr.append(i).append(". ").append(f.getNombrePelicula()).append("\nFecha: ")
-                        .append(f.getFecha()).append("\nHora: ").append(f.getHora());
+                        .append(f.getFecha()).append("\nHora: ").append(f.getHora()).append("\n");
                         i++;
                     }
 
                     String inputSeleccion = JOptionPane.showInputDialog(null,
-                    "Ingrese el número de la función que quiere ver a detalle:\n" + funcionesStr, "1");
+                    "Ingrese el número de la función que quiere ver a detalle:\n" + funcionesStr.toString(), "1");
                             
                     if (inputSeleccion == null) { 
                         revisarNotificaciones(gestor, cliente, funcionesCargadas, boletosCargados, ordenes, cartelera); 
@@ -810,7 +817,7 @@ public class Cliente extends Persona {
 
                     Funcion funcionSelec = funcionesConBoleto.get(seleccionUno - 1);
 
-                    List<Boleto> boletosFuncion = gestor.cargarBoletosPorFuncion(boletosCargados, funcionSelec);
+                    List<Boleto> boletosFuncion = gestor.cargarBoletosPorFuncion(boletosCargados, funcionSelec, cliente);
 
                     StringBuilder boletosClave = new StringBuilder("\nBoletos comprados:\n\n");
                     for (Boleto b : boletosFuncion) boletosClave.append(b.toClave()).append("\n");
