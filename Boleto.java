@@ -40,9 +40,13 @@ public class Boleto extends Funcion {
         this.nicknameComprador= nicknameComprador;
     }
 
+    public String toClave() {
+        return super.toString() + "|" + asiento;
+    }
+
     @Override
     public String toString() {
-        return super.toString() + "|" + asiento;
+        return super.toString() + "|" + asiento + "|" +  nicknameComprador;
     }
 
 }

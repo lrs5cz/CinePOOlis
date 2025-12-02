@@ -14,13 +14,14 @@ public class ThreadIntegrador implements Runnable {
     private GestorDeArchivos gestor; // Para manejar la persistencia de datos
 
     // Constante para el formato de fecha y hora
-    private static final DateTimeFormatter FORMATO_LOG = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter FORMATO_LOG = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
     
     // Constructor modificado para recibir la Orden completa
-    public ThreadIntegrador(String claveOrden, Orden orden, GestorDeArchivos gestor) {
+    public ThreadIntegrador(String claveOrden, Orden orden, GestorDeArchivos gestor, List<Vendedor> vendedores) {
         this.claveOrden = claveOrden;
         this.orden = orden;
         this.gestor = gestor;
+        this.vendedorAsignado = obtenerVendedor(vendedores);
     }
 
     // Método auxiliar para simular la pausa del hilo
@@ -31,23 +32,8 @@ public class ThreadIntegrador implements Runnable {
         Thread.sleep(pausaMillis);
     }
 
-    public String prepararOrden (Vendedor vendedor) {
-        String tipoOrden = "";
-
-        if (orden.getOrden().isEmpty()) {
-            return null;
-        }
+    public void prepararOrden (Vendedor vendedor) {
         
-        // Simular la "preparación" 
-        try {
-            // Pausa de 10 a 15 segundos antes de terminar
-            simularPausa(10, 15); 
-        } catch (InterruptedException e) {
-            // Re-lanzar la interrupción para que el hilo lo maneje
-            Thread.currentThread().interrupt();
-        }
-        
-        return tipoOrden;
     }
 
     private Vendedor obtenerVendedor (List<Vendedor> vendedores) {
@@ -72,7 +58,7 @@ public class ThreadIntegrador implements Runnable {
                 // Si la hora es 18:00 o más, o antes de las 7:00
                 boolean esNocturno = v.getTurno().equals("Nocturno") && (hora >= 18 || hora < 7);
                 
-                if (esMatutino || esVespertino || esNocturno) {
+                if ((esMatutino || esVespertino || esNocturno) && !(v.getDiaDescanso().toUpperCase().equals(dia.toUpperCase()))) {
                     // Devolvemos el primer vendedor disponible.
                     return v; 
                 }
@@ -114,35 +100,31 @@ public class ThreadIntegrador implements Runnable {
             // Preparar la orden (contiene la pausa de 10-15 segundos)
             mensaje = "Iniciando la preparación...";
             JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
-            tipoOrden = prepararOrden(vendedorAsignado);
+            prepararOrden(vendedorAsignado);
 
-            if (!(tipoOrden == null)) {
-                ZonedDateTime horaFinPrep = ZonedDateTime.now();
-                
-                // Actualizar el historial del empleado
-                logOrden = String.format(
-                    "Clave: %s, Tipo: %s | Generada: %s | Asignada: %s | Inicio Prep: %s | Fin Prep: %s",
-                    claveOrden,
-                    tipoOrden,
-                    horaGeneracion.format(FORMATO_LOG),
-                    horaAsignacion.format(FORMATO_LOG),
-                    horaInicioPrep.format(FORMATO_LOG),
-                    horaFinPrep.format(FORMATO_LOG)
-                );
-                
-                // El historial del vendedor lleva el ID de usuario del vendedor
-                String idVendedor = vendedorAsignado.generarIdNombre();
-                gestor.guardarHistorialVendedor(idVendedor, logOrden);
-                
-                // Actualizar el archivo de notificaciones del cliente
-                // La clave de dulcería que se guarda aquí indica que la orden está lista
-                gestor.guardarNotificacionCliente(claveOrden);
+            ZonedDateTime horaFinPrep = ZonedDateTime.now();
+            
+            // Actualizar el historial del empleado
+            logOrden = String.format(
+                "Clave: %s\n, Tipo: %s | Generada: %s | Asignada: %s | Inicio Prep: %s | Fin Prep: %s",
+                claveOrden,
+                tipoOrden,
+                horaGeneracion.format(FORMATO_LOG),
+                horaAsignacion.format(FORMATO_LOG),
+                horaInicioPrep.format(FORMATO_LOG),
+                horaFinPrep.format(FORMATO_LOG)
+            );
+            
+            // El historial del vendedor lleva el ID de usuario del vendedor
+            String idVendedor = vendedorAsignado.generarIdNombre();
+            gestor.guardarHistorialVendedor(idVendedor, logOrden);
+            
+            // Actualizar el archivo de notificaciones del cliente
+            // La clave de dulcería que se guarda aquí indica que la orden está lista
+            gestor.guardarNotificacionCliente(claveOrden);
 
-                mensaje = "Orden " + claveOrden + " ha sido preparada. :)";
-                JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
-            } else {
-                throw new NullPointerException("Error. No hay ninguna orden para preparar");
-            }
+            mensaje = "Orden " + claveOrden + " ha sido preparada. :)";
+            JOptionPane.showMessageDialog(null, mensaje, "Preparación de orden", JOptionPane.PLAIN_MESSAGE);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error de archivo en la integración de la orden: " + e.getMessage(), "Error I/O", JOptionPane.ERROR_MESSAGE);
         } catch (InterruptedException e) {

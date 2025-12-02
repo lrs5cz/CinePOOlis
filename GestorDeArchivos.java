@@ -610,4 +610,37 @@ public class GestorDeArchivos {
         }
         return asientosVIP;
     }
+
+    // Obtener los índices correctos para cada sala
+    public int obtenerIndiceColumna(String sala, int numeroAsiento) {
+        String salaUpper = sala.toUpperCase();
+
+        // Asientos con la matriz llena
+        if (salaUpper.contains("SALA A") || (salaUpper.contains("SALA B") && numeroAsiento > 7)) {
+            return numeroAsiento - 1; 
+        }
+        
+        // Filas centrales de la sala B
+        if (salaUpper.contains("SALA B")) {
+            if (numeroAsiento >= 1 && numeroAsiento <= 7) {
+                return numeroAsiento + 3; // Desplazamiento de las columnas
+            }
+        }
+        
+        // Sala VIP
+        if (salaUpper.contains("VIP")) {
+            if (numeroAsiento >= 1 && numeroAsiento <= 6) {
+                if (numeroAsiento <= 2) {
+                    return numeroAsiento - 1; // Columnas normales
+                } else if (numeroAsiento <= 4) {
+                    return numeroAsiento; // Columnas recorridas por un pasillo
+                } else { // Asientos 5 y 6
+                    return numeroAsiento + 1; // Columnas recorridas por dos pasillos
+                }
+            }
+        }
+        
+        // Si el asiento está fuera del rango válido para la sala
+        return -1; // Usar -1 para indicar que el número de asiento es inválido/inexistente
+    }
 }

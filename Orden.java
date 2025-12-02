@@ -37,6 +37,6 @@ public class Orden {
                 System.out.println("  - " + alimento.getNombreAlimento() + " (" + alimento.getTamanio() + ")");
             }
         }
-        System.out.println("Total de la orden: $" + calcularTotalOrden(combos));
+        System.out.println("\nTotal de la orden: $" + calcularTotalOrden(combos));
     }
 }

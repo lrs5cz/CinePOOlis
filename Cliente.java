@@ -146,7 +146,7 @@ public class Cliente extends Persona {
                     if (funcionSeleccionada == null) break;
                     
                     // Seleccionamos los asientos
-                    boletos = seleccionarAsiento(funcionSeleccionada, gestor, cliente);
+                    boletos = seleccionarAsiento(funcionSeleccionada, gestor, cliente, cartelera);
                     
                     if (boletos.isEmpty()) {
                         JOptionPane.showMessageDialog(null, "No se compraron boletos.", "Información", JOptionPane.INFORMATION_MESSAGE);
@@ -190,12 +190,12 @@ public class Cliente extends Persona {
                     return;
                 } else {
                     for (Boleto b : boletos) {
-                    boletosStr.append("Película: ").append(b.getNombrePelicula()).append("\n") // 1. Se quitó nombrePelicula
+                    boletosStr.append("Película: ").append(b.getNombrePelicula()).append("\n")
                                 .append("Horario: ").append(b.getFecha()).append(" - ").append(b.getHora()).append("\n")
                                 .append("Asiento: ").append(b.getAsiento()).append("\n")
-                                .append("Clave: ").append(b.toString());
+                                .append("Clave: ").append(b.toClave());
                 }
-                boletosStr.append("Precio total: $").append(precioTotal).append("\n");
+                boletosStr.append("\n\nPrecio total: $").append(precioTotal).append("\n");
 
                 // Creamos un JScrollPane para mostrar los boletos comprados en un área de texto desplazable
                 JScrollPane scrollPane = new JScrollPane(new JTextArea(boletosStr.toString())); // Área de texto dentro del JScrollPane
@@ -266,7 +266,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para seleccionar asiento
-    public static List<Boleto> seleccionarAsiento(Funcion funcion, GestorDeArchivos gestor, Cliente cliente) {
+    public static List<Boleto> seleccionarAsiento(Funcion funcion, GestorDeArchivos gestor, Cliente cliente, List<Pelicula> cartelera) {
         String[][] asientos = gestor.cargarAsientos(funcion);
 
         if (asientos == null) {
@@ -356,7 +356,34 @@ public class Cliente extends Persona {
                     String numeroStr = asientoSeleccionado.substring(1);
                     
                     int indiceFila = gestor.obtenerNumeroFila(letraStr);
-                    int indiceColumna = Integer.parseInt(numeroStr) - 1;
+                    int numeroAsiento = Integer.parseInt(numeroStr);
+
+                    String sala = funcion.getSala().toUpperCase(); 
+                    int indiceColumna = -1;
+
+                    if (sala.contains("SALA B")) {
+                        if (indiceFila >= 0 && indiceFila <= 3) {
+                            if (numeroAsiento >= 1 && numeroAsiento <= 7) {
+                                indiceColumna = numeroAsiento + 3; // Corregido el mapeo
+                            } else {
+                                JOptionPane.showMessageDialog(null, "El asiento " + asientoSeleccionado + " no existe en la Fila " + letraStr + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                                continue;
+                            }
+                        } else {
+                            indiceColumna = numeroAsiento - 1; // Mapeo simple
+                        }
+                    } else {
+                        // Para Sala A y Sala VIP, usamos la función auxiliar
+                        indiceColumna = gestor.obtenerIndiceColumna(sala, numeroAsiento);
+
+                        // Si la función devuelve -1, significa que el número de asiento es inválido para la sala
+                            if (indiceColumna == -1) {
+                                JOptionPane.showMessageDialog(null, "El asiento " + asientoSeleccionado + " no existe en esta sala.", "Error", JOptionPane.ERROR_MESSAGE);
+                                continue;
+                            }
+                        }
+
+                    
 
                     // Validar que los índices estén dentro de los límites de la matriz
                     if (asientos == null || indiceFila < 0 || indiceFila >= asientos.length) {
@@ -368,6 +395,7 @@ public class Cliente extends Persona {
                         );
                         continue;
                     }
+
                     
                     // Validar que los índices estén dentro de los límites de la matriz
                     if (indiceColumna < 0 || indiceColumna >= asientos[0].length) {
@@ -445,9 +473,10 @@ public class Cliente extends Persona {
 
                 // Crear los boletos y agregarlos
                 for (String asiento : asientosTemporales) {
-                    Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(), asiento, cliente.getNicknameCuenta());
+                    Boleto boleto = new Boleto(funcion.getFecha(), funcion.getHora(), funcion.getSala(), funcion.getPelicula(cartelera), asiento, cliente.getNicknameCuenta());
                     boletosComprados.add(boleto);
                 }
+                
                 gestor.guardarAsientos(funcion, asientos);
             } catch (InterruptedException e) {
                 JOptionPane.showMessageDialog(null, "El proceso de pago fue interrumpido. Revertiendo reservas.", "Error de Pago", JOptionPane.ERROR_MESSAGE);
@@ -505,50 +534,50 @@ public class Cliente extends Persona {
                 case "A", "SALA A", "B", "SALA B" -> {
                     // Asignamos un valor a las columnas
                     int numColumnas = asientos[0].length;
-                    asientosStr.append("      "); // Espacio para la letra de fila
+                    asientosStr.append("   "); // Espacio para la letra de fila
                     for (int j = 0; j < numColumnas; j++) {
                         // Formato de impresión estandarizada para las columnas
-                        asientosStr.append(String.format(" %-4s", j + 1)); 
+                        asientosStr.append(String.format(" %-6s", j + 1)); 
                     }
                     asientosStr.append("\n"); 
 
                     for (int i = 0; i < asientos.length; i++) {
                         // Añadir la letra de la fila 
                         String letraFila = gestor.obtenerLetraFila(i); 
-                        asientosStr.append(letraFila).append("      ");
+                        asientosStr.append(letraFila).append("   ");
                         
                         for (String asiento : asientos[i]) {
                             // Formato de impresión estandarizada para el asiento
-                            asientosStr.append(String.format(" %-4s", asiento));
+                            asientosStr.append(String.format(" %-6s", asiento));
                         }
                         asientosStr.append("\n"); 
                     }
                 }
                 case "VIP", "SALA VIP" -> {
-                    asientosStr.append("      "); // Espacio para la letra de fila
+                    asientosStr.append("   "); // Espacio para la letra de fila
                     int numAsiento = 0;
                     
                     for (int j = 0; j < asientos[0].length; j++) {
                         // Pasillos verticales
                         if (j == 2 || j == 5) {
-                            asientosStr.append("      "); 
+                            asientosStr.append("   "); 
                         } else {
                             numAsiento++;
                             // Imprimimos el número de asiento
-                            asientosStr.append(String.format(" %-4s", numAsiento)); 
+                            asientosStr.append(String.format(" %-6s", numAsiento)); 
                         }
                     }
                     asientosStr.append("\n"); 
 
-                    // Imprimir el cuerpo de la matriz (mismo código que A y B)
+                    // Imprimir el cuerpo de la matriz
                     for (int i = 0; i < asientos.length; i++) {
                         // Añadir la letra de la fila 
                         String letraFila = gestor.obtenerLetraFila(i); 
-                        asientosStr.append(letraFila).append("\t");
+                        asientosStr.append(letraFila).append("   ");
                         
                         for (String asiento : asientos[i]) {
                             // Formato de impresión estandarizada para el asiento
-                            asientosStr.append(String.format(" %-4s", asiento));
+                            asientosStr.append(String.format(" %-6s", asiento));
                         }
                         asientosStr.append("\n"); 
                     }
@@ -573,7 +602,7 @@ public class Cliente extends Persona {
     }
 
     // Método para comprar en la dulcería
-    public static Orden comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
+    public static void comprarDulceria (Orden orden, GestorDeArchivos gestor, Cliente cliente) {
 
         // Arreglo para almacenar las opciones disponibles
         String[] opcionesCombo = {"Combo amix", "Combo nachos", "Combo buen trío", "Combo ¿Qué me ves?", "Orden personalizada"};
@@ -597,7 +626,7 @@ public class Cliente extends Persona {
 
             if (seleccion == JOptionPane.CLOSED_OPTION) {
                 JOptionPane.showMessageDialog(null, "Compra de dulcería cancelada.", "Cancelación", JOptionPane.INFORMATION_MESSAGE);
-                return null; // Devolver NULL para indicar la cancelación a menuCliente
+                return; // Devolver NULL para indicar la cancelación a menuCliente
             }
 
             switch(seleccion) {
@@ -673,19 +702,19 @@ public class Cliente extends Persona {
             String idCliente = cliente.generarIdNombre();
             String idOrden = generarClaveDulceria(idCliente);
             gestor.guardarOrdenesDeDulceria(idOrden);
+            List<Vendedor> vendedores = gestor.cargarVendedores();
 
             // Hilo de integración
-            ThreadIntegrador integrar = new ThreadIntegrador(idOrden, orden, gestor);
+            ThreadIntegrador integrar = new ThreadIntegrador(idOrden, orden, gestor, vendedores);
             Thread hiloIntegrador = new Thread(integrar, "Integración de Orden Dulcería");
 
             hiloIntegrador.start();
 
             JOptionPane.showMessageDialog(null, "Revisa la sección de notificaciones para saber \ncuando tu orden de dulcería esté lista 😉",
             "Finalizar orden", JOptionPane.INFORMATION_MESSAGE);
-            return orden;
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error al procesar la orden: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return null;
+            return;
         }
     }
 
@@ -750,7 +779,7 @@ public class Cliente extends Persona {
         switch (seleccion) {
             case 0 -> { 
                 try {
-                    List<Funcion> funcionesConBoleto = verificarFuncion(funcionesCargadas, boletosCargados);
+                    List<Funcion> funcionesConBoleto = verificarFuncion(funcionesCargadas, boletosCargados, cliente);
                     if(funcionesConBoleto.isEmpty()) {
                         JOptionPane.showMessageDialog(null, "No tienes boletos comprados para funciones activas.", "Notificaciones de funciones", JOptionPane.INFORMATION_MESSAGE);
                         break;
@@ -759,13 +788,13 @@ public class Cliente extends Persona {
                     StringBuilder funcionesStr = new StringBuilder("\nFunciones:");
                     int i = 1;
                     for (Funcion f : funcionesConBoleto) {
-                        funcionesStr.append(i).append(". ").append(f.getNombrePelicula())
-                        .append(f.getFecha()).append(f.getHora());
+                        funcionesStr.append(i).append(". ").append(f.getNombrePelicula()).append("\nFecha: ")
+                        .append(f.getFecha()).append("\nHora: ").append(f.getHora());
                         i++;
                     }
 
                     String inputSeleccion = JOptionPane.showInputDialog(null,
-                    "Ingrese el número de la función que quiere ver a detalle: " + funcionesStr, "1");
+                    "Ingrese el número de la función que quiere ver a detalle:\n" + funcionesStr, "1");
                             
                     if (inputSeleccion == null) { 
                         revisarNotificaciones(gestor, cliente, funcionesCargadas, boletosCargados, ordenes, cartelera); 
@@ -783,11 +812,11 @@ public class Cliente extends Persona {
 
                     List<Boleto> boletosFuncion = gestor.cargarBoletosPorFuncion(boletosCargados, funcionSelec);
 
-                    StringBuilder boletosClave = new StringBuilder("\nBoletos comprados:\n");
-                    for (Boleto b : boletosFuncion) boletosClave.append(b.toString()).append("\n");
+                    StringBuilder boletosClave = new StringBuilder("\nBoletos comprados:\n\n");
+                    for (Boleto b : boletosFuncion) boletosClave.append(b.toClave()).append("\n");
                     
-                    String funcionStr = "\nFunción #" + seleccion + "\n" + funcionSelec.getNombrePelicula() + 
-                    "\nHorario: " + funcionSelec.getFecha() + ", " + funcionSelec.getHora() + boletosClave;
+                    String funcionStr = "\nFunción #" + seleccionUno + "\n" + funcionSelec.getNombrePelicula() + 
+                    "\nHorario: " + funcionSelec.getFecha() + " - " + funcionSelec.getHora() + "\n\n" + boletosClave;
 
                     JOptionPane.showMessageDialog(null, funcionStr, "Notificaciones de funciones", JOptionPane.INFORMATION_MESSAGE);
                 } catch (IOException e) {
@@ -895,7 +924,7 @@ public class Cliente extends Persona {
     }
 
     // Método auxiliar para comprobar si hay boletos comprados en una función
-    public static List<Funcion> verificarFuncion(List<Funcion> funcionesCargadas, List<Boleto> boletosCargados) {
+    public static List<Funcion> verificarFuncion(List<Funcion> funcionesCargadas, List<Boleto> boletosCargados, Cliente cliente) {
         // Lista para almacenar las funciones que tengan boletos comprados por el usuario
         List<Funcion> funcionesCompradas = new ArrayList<>();
 
@@ -908,8 +937,9 @@ public class Cliente extends Persona {
                 boolean esMismaFecha = f.getFecha().equals(b.getFecha());
                 boolean esMismaHora = f.getHora().equals(b.getHora());
                 boolean esMismaSala = f.getSala().equals(b.getSala());
+                boolean boletoDeCliente = b.getNicknameComprador().equals(cliente.getNicknameCuenta());
 
-                if (esMismoId && esMismoNombre && esMismaFecha && esMismaHora && esMismaSala) {
+                if (esMismoId && esMismoNombre && esMismaFecha && esMismaHora && esMismaSala && boletoDeCliente) {
                     hasBoletos = true; // Se encontró un boleto para esta función
                     break;             // No necesitamos revisar más boletos para esta función
                 }

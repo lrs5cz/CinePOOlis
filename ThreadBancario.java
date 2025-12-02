@@ -1,9 +1,11 @@
+import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class ThreadBancario implements Runnable {
 
-    public void cargoTarjeta() throws InterruptedException {
+    public void cargoTarjeta() throws InterruptedException, InvocationTargetException {
         // Genera un valor entre 2 y 5 segundos para la pausa
         Random random = new Random();
         int intervalo = random.nextInt(2000, 5001);
@@ -17,19 +19,24 @@ public class ThreadBancario implements Runnable {
         hiloProgreso.start();
 
         // Muestra el primer mensaje
-        JOptionPane.showMessageDialog(null, "Estableciendo conexión con el banco..." ,
-        "Validación del pago", JOptionPane.INFORMATION_MESSAGE); 
+        SwingUtilities.invokeAndWait(() -> {
+            JOptionPane.showMessageDialog(null, "Estableciendo conexión con el banco...",
+            "Validación del pago", JOptionPane.INFORMATION_MESSAGE);
+        }); 
         // Pausa
         Thread.sleep(intervalo);
 
-        JOptionPane.showMessageDialog(null, "Haciendo el cargo correspondiente..." ,
-        "Validación del pago", JOptionPane.INFORMATION_MESSAGE); 
+        SwingUtilities.invokeAndWait(() -> {
+        JOptionPane.showMessageDialog(null, "Haciendo el cargo correspondiente...",
+        "Validación del pago", JOptionPane.INFORMATION_MESSAGE);
+        });
 
         Thread.sleep(intervalo);
 
-        JOptionPane.showMessageDialog(null, "Transacción finalizada." ,
-        "Pago realizado", JOptionPane.INFORMATION_MESSAGE); 
-        Thread.sleep(3000);
+        SwingUtilities.invokeAndWait(() -> {
+        JOptionPane.showMessageDialog(null, "Transacción finalizada.",
+        "Pago realizado", JOptionPane.INFORMATION_MESSAGE);
+        });
 
         // Terminamos el progreso
         progreso.terminar();
@@ -42,6 +49,8 @@ public class ThreadBancario implements Runnable {
             cargoTarjeta();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (InvocationTargetException e) {
+
         }
     }    
 }

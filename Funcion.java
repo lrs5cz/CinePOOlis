@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class Funcion {
     // Atributos
     String nombrePelicula, idPelicula, fecha, hora, sala;
@@ -51,7 +53,17 @@ public class Funcion {
         this.sala = sala;
     }
 
-    public Pelicula getPelicula () {
+    public Pelicula getPelicula (List<Pelicula> cartelera) {
+        Pelicula peli = null;
+        for (Pelicula p : cartelera) {
+            if (idPelicula.equals(p.getIdPelicula())) {
+                peli = p;
+            }
+        }
+        return peli;
+    }
+
+    public Pelicula getPelicula() {
         return pelicula;
     }
 

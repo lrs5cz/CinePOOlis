@@ -10,28 +10,51 @@ public class ThreadBarra implements Runnable {
     }
 
     public void barraProgreso() {
-        // Creamos la Barra de Progresp
-        this.barra = new JProgressBar(0, 100);
-        this.barra.setValue(0); // Iniciamos en 0
-        this.barra.setStringPainted(true); // Mostramos el porcentaje
+        SwingUtilities.invokeLater(() -> {
+            // Creamos barra de progreso
+            this.barra = new JProgressBar(0, 100);
+            this.barra.setValue(0);
+            this.barra.setStringPainted(true);
 
-        // Mostramos la barra
-        JOptionPane panel = new JOptionPane(barra, JOptionPane.INFORMATION_MESSAGE);
-        this.dialog = panel.createDialog(null, "Procesando Pago...");
-        this.dialog.setModal(false);
-        this.dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE); // Evitar que el usuario lo cierre antes
-        SwingUtilities.invokeLater(() -> dialog.setVisible(true));
+            JOptionPane panel = new JOptionPane(barra, JOptionPane.INFORMATION_MESSAGE);
+            this.dialog = panel.createDialog(null, "Procesando Pago...");
+            this.dialog.setModal(false);
+            this.dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
+            // Situamos la barra 200px arriba
+            dialog.setLocationRelativeTo(null);
+            int currentX = dialog.getX();
+            int currentY = dialog.getY();
+            dialog.setLocation(currentX, currentY + 200);
+            
+            // Hacemos visible el diálogo
+            dialog.setVisible(true);
+        });
+
+        try {
+        Thread.sleep(100); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
 
         // Ajustamos el tiempo para simular el proceso
         long tiempoInicio = System.currentTimeMillis();
-        long tiempoActual;
-        int porcentaje;
+
+        while(this.dialog == null || !this.dialog.isVisible()) {
+            try {
+                Thread.sleep(100); 
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
 
         while(dialog.isVisible()) {
-            tiempoActual = System.currentTimeMillis();
-            long tiempoTranscurrido = tiempoActual - tiempoInicio;
-
-            // Calculamos porcentaje
+        long tiempoActual = System.currentTimeMillis();
+        long tiempoTranscurrido = tiempoActual - tiempoInicio;
+        int porcentaje;
+        // Calculamos porcentaje
 
             if (duracionTotal > 0) {
                 porcentaje = (int) (100 * tiempoTranscurrido / duracionTotal);
@@ -42,7 +65,12 @@ public class ThreadBarra implements Runnable {
 
             // Actualizamos la barra
             final int progresoFinal = porcentaje;
-            SwingUtilities.invokeLater(() -> barra.setValue(progresoFinal));
+            SwingUtilities.invokeLater(() -> {
+                // Solo actualizamos si el diálogo no ha sido cerrado por terminar()
+                if (dialog.isVisible()) {
+                    barra.setValue(progresoFinal);
+                }
+            });
 
             try {
                 Thread.sleep(50); 
