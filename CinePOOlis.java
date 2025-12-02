@@ -1,6 +1,7 @@
 import java.io.IOException;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import javax.swing.*;
-
 import java.util.List;
 
 public class CinePOOlis {
@@ -215,15 +216,40 @@ public class CinePOOlis {
             if (usuario instanceof Cliente) {
                 Cliente cliente = (Cliente) usuario;
                 // Agregaremos validación de horario para que el cliente no pueda acceder al cine antes de las 8 am y después de las 23:59pm
-                Cliente.menuCliente(gestor, cliente);
+                LocalTime horaActual = LocalTime.now();
+
+                // Hora de apretura y cierre
+                LocalTime apertura = LocalTime.of(8, 0); // 8 am
+                LocalTime cierre = LocalTime.of(23, 59); // 12 am
+                
+                // Validamos
+                if(horaActual.isBefore(apertura) || horaActual.isAfter(cierre)) {
+                    JOptionPane.showMessageDialog(null, "Bienvenido/a, CinePOOlis aún no está abierto.\n" +
+                    "vuelve cuando el cine esté abierto.\n Horario: 08:00 am - 12:00 am", "Clientes", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    Cliente.menuCliente(gestor, cliente);
+                }
+                
             } else if (usuario instanceof Administrador) {
                 // Agregaremos una validación para que solo los administradores que trabajan entre semana puedan acceder de lunes a viernes y viceversa
                 Administrador admin = (Administrador) usuario;
-                Administrador.menuAdmin(gestor, v, admin); 
+                boolean disponibilidad = validarDisponibilidadAdmin(admin);
+                if (disponibilidad) Administrador.menuAdmin(gestor, v, admin); 
+                else {
+                    JOptionPane.showMessageDialog(null, "¿Qué haces aquí " + admin.getNombre() + "?\nA esta hora deberías de estar descansando del trabajo" + 
+                    "\nVete a descansar, ya sabes que el jefe no paga horas extra.", "Administradores", JOptionPane.PLAIN_MESSAGE);
+                    return;
+                }
             } else if (usuario instanceof Vendedor) {
                 // Agregaremos una validación para que los vendedores no puedan acceder a su trabajo fuera de su turno o en su día de descanso
                 Vendedor vendedor = (Vendedor) usuario;
-                Vendedor.menuVendedor(gestor, vendedor); 
+                boolean disponibilidad = validarDisponibilidadVendedor(vendedor);
+                if (disponibilidad) Vendedor.menuVendedor(gestor, vendedor); 
+                else {
+                    JOptionPane.showMessageDialog(null, "¿Qué haces aquí " + vendedor.getNombre() + "?\nA esta hora deberías de estar descansando del trabajo" + 
+                    "\nVete a descansar, ya sabes que el jefe no paga horas extra.", "Vendedores", JOptionPane.PLAIN_MESSAGE);
+                    return;
+                }
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -286,6 +312,59 @@ public class CinePOOlis {
         return null;
     }
 
+    public static boolean validarDisponibilidadAdmin(Administrador admin) {
+        boolean isTrabajandoDia = false;
+
+        // Validamos sus días de trabajo
+        ZonedDateTime hoy = ZonedDateTime.now();
+        int diaSemana = hoy.getDayOfWeek().getValue();
+        // Validamos si el día es entre semana o fin de semana
+        boolean entreSemana = (diaSemana >= 1 && diaSemana <= 5);
+        boolean finDeSemana = (diaSemana == 6 || diaSemana == 7);
+
+        if (admin.getDiasTrabajo().equals("Entre Semana")) isTrabajandoDia = entreSemana;
+        else if (admin.getDiasTrabajo().equals("Fin de semana")) isTrabajandoDia = finDeSemana;
+        
+        if(!isTrabajandoDia) return false;
+
+        // Validamos el turno
+        boolean isTrabajandoAhora = false;
+        int hora = hoy.getHour();
+
+        if (admin.getTurno().equals("Matutino") && (hora >= 7 && hora < 13)) isTrabajandoAhora = true;
+        else if (admin.getTurno().equals("Vespertino") && (hora >= 13 && hora < 18)) isTrabajandoAhora = true;
+        else if (admin.getTurno().equals("Nocturno") && (hora >= 18 || hora < 2)) isTrabajandoAhora = true;
+
+        return isTrabajandoAhora; 
+    }
+
+    public static boolean validarDisponibilidadVendedor(Vendedor vendedor) {
+
+        // Validamos su día de descanso
+        ZonedDateTime hoy = ZonedDateTime.now();
+        int diaSemana = hoy.getDayOfWeek().getValue();
+        String dia = switch (diaSemana) {
+            case 1 -> "Lunes";
+            case 2 -> "Martes";
+            case 3 -> "Miércoles";
+            case 4 -> "Jueves";
+            case 5 -> "Viernes";
+            case 6 -> "Sábado";
+            case 7 -> "Domingo";
+            default -> "";
+        };
+        if (dia.toUpperCase().equals(vendedor.getDiaDescanso().toUpperCase())) return false;
+        
+        // Validamos el turno
+        boolean isTrabajandoAhora = false;
+        int hora = hoy.getHour();
+
+        if (vendedor.getTurno().equals("Matutino") && (hora >= 7 && hora < 13)) isTrabajandoAhora = true;
+        else if (vendedor.getTurno().equals("Vespertino") && (hora >= 13 && hora < 18)) isTrabajandoAhora = true;
+        else if (vendedor.getTurno().equals("Nocturno") && (hora >= 18 || hora < 1)) isTrabajandoAhora = true;
+
+        return isTrabajandoAhora; 
+    }
     public static void main(String[] args) {
         try {
             GestorDeArchivos gestor = new GestorDeArchivos();

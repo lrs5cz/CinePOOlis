@@ -4,19 +4,23 @@ import javax.swing.JOptionPane;
 
 public class GestorDeArchivos {
 
-    // Se crea el archivo de peliculas
-    private final String CARPETA_USUARIOS = "archivosUsuarios/";
-    private final String CARPETA_SALAS_FUNCION = "archivosSalaFuncion/";
-    private final File CLIENTES_REGISTRADOS = new File(CARPETA_USUARIOS + "clientesRegistrados.dat"); 
-    private final File ADMIN_REGISTRADOS = new File(CARPETA_USUARIOS + "adminRegistrados.dat");
-    private final File VENDEDORES_REGISTRADOS = new File(CARPETA_USUARIOS + "vendedoresRegistrados.dat");
-    private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
-    private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
-    private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
+    // Se definen los paths de los archivos y directorios desde donde se van a leer los archivos
+    private final String CARPETA_USUARIOS = "datos/datosUsuarios/";
+    private final String CARPETA_SALAS_FUNCION = "datos/datosPeliculas/archivosSalaFuncion/";
+    private final String CARPETA_PELICULAS = "datos/datosPeliculas/";
+    private final String CARPETA_BOLETOS = "datos/datosBoletos/";
+    private final String CARPETA_DULCERIA = "datos/datosDulceria/";
+    private final String CLIENTES_REGISTRADOS = CARPETA_USUARIOS + "clientesRegistrados.dat"; 
+    private final String ADMIN_REGISTRADOS = CARPETA_USUARIOS + "adminRegistrados.dat";
+    private final String VENDEDORES_REGISTRADOS = CARPETA_USUARIOS + "vendedoresRegistrados.dat";
+    private final String ARCHIVO_PELICULAS = CARPETA_PELICULAS + "peliculasAgregadas.txt";
+    private final String ARCHIVO_FUNCIONES = CARPETA_PELICULAS + "funcionesAgregadas.txt";
+    private final String BOLETOS_COMPRADOS = CARPETA_BOLETOS + "boletosComprados.txt";
     private final String RUTA_BASE_ASIENTOS = "asientosFuncion_";
-    private final File HISTORIAL_DULCERIA = new File("historialDeDulceria.txt"); // Claves de órdenes 
-    private final String HISTORIAL_VENDEDOR_PREFIX = "historialesVendedores/historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
-    private final File ESTADO_ORDEN = new File ("EstadoDeLaOrden.txt"); // Archivo de texto para leer si una orden ya está lista o aún no
+    private final String HISTORIAL_DULCERIA = CARPETA_DULCERIA + "historialDeDulceria.txt"; // Claves de órdenes 
+    private final String HISTORIAL_VENDEDOR_PREFIX = CARPETA_DULCERIA + "historialesVendedores/historialVendedor_"; // Prefijo de la ruta para archivos como "historialVendedor_{ID Vendedor}.txt"
+    private final String ESTADO_ORDEN = CARPETA_DULCERIA + "estadoDeLaOrden.txt"; // Archivo de texto para leer si una orden ya está lista o aún no
+    private final String ORDENES_LISTAS = CARPETA_DULCERIA + "ordenesTerminadas.txt";
 
     public void guardarUsuarios (Persona persona) throws IOException {
         if (persona instanceof Cliente) {
@@ -50,6 +54,11 @@ public class GestorDeArchivos {
 
     public List<Cliente> cargarClientes() throws IOException {
         List<Cliente> clientes = new ArrayList<>();
+        File clientesRegistrados = new File(CLIENTES_REGISTRADOS);
+        if (!clientesRegistrados.exists()) {
+            return clientes;
+        }
+
         try (
         FileInputStream fis = new FileInputStream(CLIENTES_REGISTRADOS);
         DataInputStream dis = new DataInputStream(fis)
@@ -97,6 +106,10 @@ public class GestorDeArchivos {
 
     public List<Administrador> cargarAdmin() throws IOException {
         List<Administrador> admins = new ArrayList<>();
+        File administradores = new File (ADMIN_REGISTRADOS);
+        if (!administradores.exists()) {
+            return admins;
+        }
         try (
         FileInputStream fis = new FileInputStream(ADMIN_REGISTRADOS);
         DataInputStream dis = new DataInputStream(fis)
@@ -145,6 +158,10 @@ public class GestorDeArchivos {
 
     public List<Vendedor> cargarVendedores() throws IOException {
         List<Vendedor> vendedores = new ArrayList<>();
+        File vendedoresRegistrados = new File(VENDEDORES_REGISTRADOS);
+        if (!vendedoresRegistrados.exists()) {
+            return vendedores;
+        }
         try (
         FileInputStream fis = new FileInputStream(VENDEDORES_REGISTRADOS);
         DataInputStream dis = new DataInputStream(fis)
@@ -183,8 +200,9 @@ public class GestorDeArchivos {
     // Método para cargar las peliculas del archivo "peliculasAgregadas.txt"
     public List<Pelicula> cargarPeliculas() throws IOException{
         List<Pelicula> listaDePeliculasDelArchivo = new ArrayList<>();
-        if(!ARCHIVO_PELICULAS.exists()){
-            JOptionPane.showMessageDialog(null,"Aun no esta creado el archivo","ARCHIVO NO CREADO",0);
+        File archivoPeliculas = new File(ARCHIVO_PELICULAS);
+
+        if(!archivoPeliculas.exists()){
             return listaDePeliculasDelArchivo;
         }
         BufferedReader objetoReader = new BufferedReader(new FileReader(ARCHIVO_PELICULAS));
@@ -210,9 +228,9 @@ public class GestorDeArchivos {
     // Método para cargar las funciones del archivo "funcionesAgregadas.txt"
     public List<Funcion> mostrarFunciones(List<Pelicula> cartelera) throws IOException{
         List<Funcion> listaDeFuncionesDelArchivo = new ArrayList<>();
+        File archivoFunciones = new File(ARCHIVO_FUNCIONES);
 
-        if(!ARCHIVO_FUNCIONES.exists()){
-            JOptionPane.showMessageDialog(null,"Aun no esta creado el archivo de funciones","ARCHIVO NO CREADO",0);
+        if(!archivoFunciones.exists()) {
             return listaDeFuncionesDelArchivo;
         }
         BufferedReader objetoReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES));
@@ -245,14 +263,19 @@ public class GestorDeArchivos {
     // Validación de media hora entre funciones
     public boolean validarIntervaloEntreFunciones(String salaNueva , String nuevaFecha, String nuevaHora, Pelicula pelicula) throws IOException {
         String nuevaFechaNormalizada = nuevaFecha.replace("/", "");
-        if(!ARCHIVO_FUNCIONES.exists()){
-            JOptionPane.showMessageDialog(null,"Puedes agregar a la hora que quieras","ARCHIVO NO CREADO",1);
+        File archivoFunciones = new File(ARCHIVO_FUNCIONES);
+        List<Pelicula> cartelera = cargarPeliculas();
+        List<Funcion> funciones = mostrarFunciones(cartelera);
+
+        if(!archivoFunciones.exists() || funciones.isEmpty()){
+            JOptionPane.showMessageDialog(null,"No hay funciones programadas, puedes agregar a la hora que quieras","ARCHIVO NO CREADO",1);
             return true;
         }
+
         try (BufferedReader objetReader = new BufferedReader(new FileReader(ARCHIVO_FUNCIONES))){
             String linea;
             while((linea = objetReader.readLine()) != null){
-                String[] datos = linea.split("|");
+                String[] datos = linea.split("\\|");
                 String fecha = datos[1];
                 String hora = datos[2];
                 String sala = datos[3];
@@ -281,9 +304,9 @@ public class GestorDeArchivos {
     // Método para cargar los boletos comprados del archivo "boletosComprados.txt"
     public List<Boleto> cargarBoletosEnArchivo (List<Pelicula> cartelera) throws IOException {
         List<Boleto> listaDeBoletosDelArchivo = new ArrayList<>();
+        File boletosComprados = new File(BOLETOS_COMPRADOS);
 
-        if(!BOLETOS_COMPRADOS.exists()) {
-            JOptionPane.showMessageDialog(null,"Aun no esta creado el archivo","ARCHIVO NO CREADO",0);
+        if(!boletosComprados.exists()) {
             return listaDeBoletosDelArchivo;
         }
 
@@ -341,8 +364,9 @@ public class GestorDeArchivos {
         List<String> ordenesDeUsuario = new ArrayList<>();
         String idCliente = cliente.generarIdNombre() + "|";
 
-        if (!HISTORIAL_DULCERIA.exists()) {
-            JOptionPane.showMessageDialog(null,"Aun no esta creado el archivo","ARCHIVO NO CREADO",0);
+        File historialDulceria = new File (HISTORIAL_DULCERIA);
+
+        if (!historialDulceria.exists()) {
             return ordenesDeUsuario;
         }
 
@@ -363,9 +387,9 @@ public class GestorDeArchivos {
     // Método para cargar las películas del archivo "historialDeDulceria.txt"
     public List<String> cargarHistorialDeDulceria () throws IOException {
         List<String> ordenesDeUsuario = new ArrayList<>();
+        File archivoHistorial = new File (HISTORIAL_DULCERIA);
 
-        if (!HISTORIAL_DULCERIA.exists()) {
-            JOptionPane.showMessageDialog(null,"Aun no esta creado el archivo","ARCHIVO NO CREADO",0);
+        if (!archivoHistorial.exists()) {
             return ordenesDeUsuario;
         }
 
@@ -381,7 +405,7 @@ public class GestorDeArchivos {
     }
 
     public void guardarNotificacionCliente(String clave) throws IOException {
-        FileWriter objetoFileWriter = new FileWriter(HISTORIAL_DULCERIA, true);
+        FileWriter objetoFileWriter = new FileWriter(ORDENES_LISTAS, true);
         objetoFileWriter.write(clave + "\n");
         objetoFileWriter.close();
     }
@@ -396,6 +420,13 @@ public class GestorDeArchivos {
 
     public List<String> cargarHistorialVendedor(String idVendedor) throws IOException {
         List<String> ordenesDeUsuario = new ArrayList<>();
+        String nombreArchivo = HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt";
+    
+        File archivo = new File(nombreArchivo); 
+        
+        if (!archivo.exists()) {
+            return new ArrayList<>(); 
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(HISTORIAL_VENDEDOR_PREFIX + idVendedor + ".txt"))) {
             String linea;
@@ -427,10 +458,17 @@ public class GestorDeArchivos {
     }
 
     public void guardarMensajeNotificacion(String mensaje) throws IOException {
-        // Usamos 'false' para sobrescribir el archivo en cada llamada
-        FileWriter objetoFileWriter = new FileWriter(ESTADO_ORDEN, false); 
-        objetoFileWriter.write(mensaje);
-        objetoFileWriter.close();
+        
+        File archivo = new File(ESTADO_ORDEN);
+        File directorioPadre = archivo.getParentFile();
+
+        if (directorioPadre != null && !directorioPadre.exists()) {
+            directorioPadre.mkdirs(); 
+        }
+
+        try (FileWriter objetoFileWriter = new FileWriter(archivo, false)) { 
+            objetoFileWriter.write(mensaje);
+        }
     }
 
     public String leerMensajeNotificacion() throws IOException {

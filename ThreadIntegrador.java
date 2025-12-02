@@ -11,11 +11,14 @@ import javax.swing.JOptionPane;
 public class ThreadIntegrador implements Runnable {
 
     private static final Set<String> VENDEDOR_PREPARANDO = ConcurrentHashMap.newKeySet();
+    // Formato de la hora actual
+    private static final DateTimeFormatter FORMATO_NOTIFICACION = DateTimeFormatter.ofPattern("yyyy/MM/dd:HHmm");
 
     private String claveOrden; 
     private Combo combo; // Objeto Orden completo
     private Vendedor vendedorAsignado; 
     private GestorDeArchivos gestor; // Para manejar la persistencia de datos
+    private List<Vendedor> vendedores;
 
     // Constante para el formato de fecha y hora
     private static final DateTimeFormatter FORMATO_LOG = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
@@ -25,11 +28,7 @@ public class ThreadIntegrador implements Runnable {
         this.claveOrden = claveOrden;
         this.combo = combo;
         this.gestor = gestor;
-        this.vendedorAsignado = obtenerVendedor(vendedores);
-
-        if(this.vendedorAsignado != null) {
-            VENDEDOR_PREPARANDO.add(this.vendedorAsignado.generarIdNombre()); // Añade al set el vendedor para que no lo usen si está preparando algo
-        }
+        this.vendedores = vendedores;
     }
 
 
@@ -83,7 +82,7 @@ public class ThreadIntegrador implements Runnable {
                 boolean esMatutino = v.getTurno().equals("Matutino") && (hora >= 7 && hora < 13);
                 boolean esVespertino = v.getTurno().equals("Vespertino") && (hora >= 13 && hora < 18);
                 // Si la hora es 18:00 o más, o antes de las 7:00
-                boolean esNocturno = v.getTurno().equals("Nocturno") && (hora >= 18 || hora < 7);
+                boolean esNocturno = v.getTurno().equals("Nocturno") && (hora >= 18 || hora < 1);
                 
                 if ((esMatutino || esVespertino || esNocturno) && !(v.getDiaDescanso().toUpperCase().equals(dia.toUpperCase()))) {
                     // Devolvemos el primer vendedor disponible.
@@ -105,7 +104,6 @@ public class ThreadIntegrador implements Runnable {
             simularPausa(20, 40); 
             
             // Cargamos los vendedores
-            List<Vendedor> vendedores = gestor.cargarVendedores();
             vendedorAsignado = obtenerVendedor(vendedores);
             
             if (vendedorAsignado == null) {
@@ -113,6 +111,8 @@ public class ThreadIntegrador implements Runnable {
                 // La orden no se procesa si no hay vendedor.
                 return; 
             }
+
+            VENDEDOR_PREPARANDO.add(vendedorAsignado.generarIdNombre());
             
             ZonedDateTime horaAsignacion = ZonedDateTime.now();
             
@@ -122,7 +122,7 @@ public class ThreadIntegrador implements Runnable {
             ZonedDateTime horaInicioPrep = ZonedDateTime.now();
             
             // Preparar la orden (Pausa de 10 a 15 segundos)
-            prepararOrden(vendedorAsignado, combo);
+            tipoOrden = prepararOrden(vendedorAsignado, combo);
             simularPausa(10, 15);
 
             ZonedDateTime horaFinPrep = ZonedDateTime.now();
@@ -146,17 +146,11 @@ public class ThreadIntegrador implements Runnable {
             // La clave de dulcería que se guarda aquí indica que la orden está lista
             gestor.guardarNotificacionCliente(claveOrden);
 
-            // Imprimimos la hora y día de finalización
-            int anio = horaFinPrep.getYear();
-            int mes = horaFinPrep.getMonthValue();
-            int dia = horaFinPrep.getDayOfMonth();
-            int hora = horaFinPrep.getHour();
-            int minutos = horaFinPrep.getMinute();
+            String horaTerminacionStr = horaFinPrep.format(FORMATO_NOTIFICACION);
 
             // Sobreescribimos el mensaje que se va a devolver al usuario al verificar las notificaciones
             gestor.guardarMensajeNotificacion("Hola, soy " + vendedorAsignado.getNombre() +
-            ".\nYa está lista tu orden de dulcería. Puedes pasar a recogerla en la fila de dulcería para ventas de la app." + anio +
-            mes + dia + ":" + hora + minutos + ".");
+            ".\nYa está lista tu orden de dulcería.\nPuedes pasar a recogerla en la fila de dulcería para ventas de la app." + horaTerminacionStr + ".");
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error de archivo en la integración de la orden: " + e.getMessage(), "Error I/O", JOptionPane.ERROR_MESSAGE);
         } catch (InterruptedException e) {
@@ -166,6 +160,10 @@ public class ThreadIntegrador implements Runnable {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error desconocido en la integración de la orden: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            if (vendedorAsignado != null) {
+                VENDEDOR_PREPARANDO.remove(vendedorAsignado.generarIdNombre());
+            }
         }
     }
 }

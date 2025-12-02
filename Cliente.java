@@ -873,47 +873,13 @@ public class Cliente extends Persona {
                         
                         String claveSeleccionada = ordenesDelCliente.get(indiceSeleccionado);
                         
-                        if (ordenesTerminadas.contains(claveSeleccionada)) {
-                        String idVendedorLog = cliente.generarIdNombre(); 
-
-                        String logDetallado = gestor.buscarOrdenEnHistorialVendedor(claveSeleccionada, idVendedorLog);
-                        
-                        String nombreVendedor;
-                        
-                        if (logDetallado != null) {
-                            // Cargamos todos los usuarios para encontrar el nombre del vendedor
-                            List<Vendedor> vendedores = gestor.cargarVendedores();
-                            
-                            // Buscamos el objeto Vendedor 
-                            nombreVendedor = vendedores.stream()
-                                .filter(v -> (v.generarIdNombre().equals(idVendedorLog)))
-                                .map(Vendedor::getNombre)
-                                .findFirst()
-                                .orElse("Vendedor Desconocido"); // Usar fallback
-
-                        } else {
-                            // Fallback si no se puede leer el log del vendedor (problema de archivo)
-                            nombreVendedor = "Vendedor Temporal"; 
-                        }
-
-                        // Formato de la clave: ID|AAAAMMDD|hhmm
-                        String[] partesClave = claveSeleccionada.split("\\|");
-                        String fechaHoraTerminacionStr = partesClave[1] + ":" + partesClave[2]; // AAAAMMDD:hhmm
-
-                        String mensajeListo = String.format(
-                            "Hola, soy %s. Ya está lista tu orden de dulcería. Puedes pasar a recogerla en la fila de dulcería para ventas de la app. %s",
-                            nombreVendedor, fechaHoraTerminacionStr
-                        );
-
-                        gestor.guardarMensajeNotificacion(mensajeListo);
-                            
-                        } else {
+                        if (!ordenesTerminadas.contains(claveSeleccionada)) {
                             // Orden en progreso (La clave existe en 'ordenesDelCliente' pero no en 'ordenesTerminadas').
                             String mensajeProgreso = "Estamos trabajando arduamente para que tus alimentos sean deliciosos. Por favor, espera un poco más =D";
                             gestor.guardarMensajeNotificacion(mensajeProgreso);
                         }
                         
-                        // 5. Mostrar el mensaje al cliente leyendo el archivo
+                        // Mostrar el mensaje al cliente leyendo el archivo
                         String mensajeFinal = gestor.leerMensajeNotificacion();
                         JOptionPane.showMessageDialog(null, mensajeFinal, "Estado de la Orden: " + claveSeleccionada, JOptionPane.INFORMATION_MESSAGE);
                         reintentar = false;

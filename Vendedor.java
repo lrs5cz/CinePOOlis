@@ -21,30 +21,42 @@ public class Vendedor extends Empleado {
     public void setDiaDescanso(String diaDescanso) {
         this.diaDescanso = diaDescanso;
     }
+
     public static void menuVendedor(GestorDeArchivos unGestor, Vendedor vendedor) {
-        try {
-            String[] op = {"Ver órdenes preparadas", "Cerrar sesión"};
-            List<String> historialOrdenes = unGestor.cargarHistorialVendedor(vendedor.generarIdNombre());
-            int res = JOptionPane.showOptionDialog(null, "Bienvenido/a, " + vendedor.getNombre() + "\n\nQué acción desea realizar?\n", 
-            "Vendedores", JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
-            if (res == 0) {
-                StringBuilder ordenes = new StringBuilder();
-                    ordenes.append("Historial de ordenes\n\n");
-                    int i = 1;
-                    for (String unaOrden : historialOrdenes) {
-                        ordenes.append(i). append(". ").append(unaOrden).append("\n");
-                        i++;
+        int res = 0;
+        do {
+            try {
+                String[] op = {"Ver órdenes preparadas", "Cerrar sesión"};
+                List<String> historialOrdenes = unGestor.cargarHistorialVendedor(vendedor.generarIdNombre());
+                if (historialOrdenes.isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Bienvenido/a, " + vendedor.getNombre() + 
+                    "\n\n No has atendido ninguna orden todavía, se te redigirá al menú principal...", "Vendedores", JOptionPane.PLAIN_MESSAGE);
+                    return;
+                } else {
+                    res = JOptionPane.showOptionDialog(null, "Bienvenido/a, " + vendedor.getNombre() + "\n\nQué acción desea realizar?\n", 
+                    "Vendedores", JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE, null, op, op[0]);
+                    if (res == 0 && !historialOrdenes.isEmpty()) {
+                        StringBuilder ordenes = new StringBuilder();
+                            ordenes.append("Historial de ordenes\n\n");
+                            int i = 1;
+                            for (String unaOrden : historialOrdenes) {
+                                ordenes.append(i). append(". ").append(unaOrden).append("\n");
+                                i++;
+                            }
+                            
+                            JOptionPane.showMessageDialog(null, ordenes.toString(), "Historial de " + vendedor.getNombre(), JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Cerrando sesion...", "Hasta luego", JOptionPane.PLAIN_MESSAGE);
                     }
-
-                    JOptionPane.showMessageDialog(null, ordenes.toString(), "Historial de " + vendedor.getNombre(), JOptionPane.INFORMATION_MESSAGE);
-            } else {
-
+                }
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Error de archivo: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+                break;
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Error desconocido: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
+                break;
             }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error de archivo: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error desconocido: " + e.getMessage(), "Error General", JOptionPane.ERROR_MESSAGE);
-        }
+        } while (res == 0);
     }
 
     // Métodos de preparación
