@@ -3,6 +3,10 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -518,4 +522,5 @@ public class Administrador extends Empleado {
     }
 
 }
+
 
