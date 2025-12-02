@@ -1,6 +1,13 @@
 import java.io.IOException;
 import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Administrador extends Empleado {
     // Atributos
@@ -29,9 +36,16 @@ public class Administrador extends Empleado {
             do {
                 try {
                     String nombrePelicula = JOptionPane.showInputDialog("Ingrese el nombre de la película", "Ej. Titanic");
+                    if (nombrePelicula == null) return;
+                    
                     String generoPelicula = JOptionPane.showInputDialog("Ingrese el género de la película", "Ej. Terror");
+                    if (generoPelicula == null) return;
+                    
                     String sinopsis = JOptionPane.showInputDialog("Ingrese la sinopsis de la película");
+                    if (sinopsis == null) return;
+                    
                     String duracion = JOptionPane.showInputDialog("Ingrese la duración de la película (formato hh:mm)", "Ej. 02:24");
+                    if (duracion == null) return;
                     
                     Pelicula nuevaPelicula = new Pelicula(nombrePelicula, generoPelicula, sinopsis, duracion);
                     gestor.guardarPeliculaEnArchivo(nuevaPelicula); // Llama al metodo que guarda la pelicula en el archivo
@@ -45,131 +59,166 @@ public class Administrador extends Empleado {
             } while (banderaRepetir);
     }
 
-    public static void agregarFuncion(GestorDeArchivos gestor) throws IOException{
+    public static void agregarFuncion(GestorDeArchivos gestor) throws IOException {
         try {
             List<Pelicula> peliculas = gestor.cargarPeliculas();
-            if(peliculas.isEmpty()){
-                JOptionPane.showMessageDialog(null, "No hay peliculas registradas");
+            if (peliculas.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "No hay películas registradas. Agrega una primero.");
                 return;
             }
 
-            // Mostrar peliculas
-
-            StringBuilder unStringBuilder = new StringBuilder("Pelicula disponibles:\n");
-            for(int i = 0; i < peliculas.size(); i++) {
+            // Selección de Película
+            StringBuilder unStringBuilder = new StringBuilder("Películas disponibles:\n");
+            for (int i = 0; i < peliculas.size(); i++) {
                 unStringBuilder.append((i + 1)).append(". ").append(peliculas.get(i).getNombrePelicula()).append("\n");
             }
-            String seleccion = JOptionPane.showInputDialog("Ingrese el numero de la pelicula que desea seleccionar\n" + unStringBuilder,
-                "Ej. 0");
+            String seleccion = JOptionPane.showInputDialog("Ingrese el número de la película que desea seleccionar\n" + unStringBuilder, "Seleccionar Película");
 
-            if(seleccion == null) return;
+            if (seleccion == null) return;
 
             int idSelec = -1;
             try {
                 idSelec = Integer.parseInt(seleccion) - 1;
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Error al procesar, Numero no valido"+ e.getMessage());
+                JOptionPane.showMessageDialog(null, "Error al procesar: Número no válido.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             if (idSelec < 0 || idSelec >= peliculas.size()) {
-                JOptionPane.showMessageDialog(null, "Error. Elige un número válido");
+                JOptionPane.showMessageDialog(null, "Error. Elige un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             Pelicula unaPeli = peliculas.get(idSelec);
 
-            String fecha = JOptionPane.showInputDialog("Ingrese la fecha de la función (AAAA/MM/DD)", "Agregar Función");
-            if (fecha == null) return;
-
-            // Validar que el usuario ingrese una fecha válida 
-            try { 
-                int anio = Integer.parseInt(fecha.substring(0, 4));
-                int mes = Integer.parseInt(fecha.substring(5, 7));
-                int dia = Integer.parseInt(fecha.substring(8, 10 ));
-
-                if (anio< 2025) {
-                    JOptionPane.showMessageDialog(null, "El año que insertó es invalido.");
-                    return;
-                }
-                
-                if (mes< 1 || mes > 12) {
-                    JOptionPane.showMessageDialog(null, "El mes que insertó es invalido.");
-                    return;
-                }
-
-                if (dia < 1 || dia > 31) {
-                    JOptionPane.showMessageDialog(null, "El día que insertó es invalido.");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "La fecha que ingresó es invalida");
-            }
-            
-            // Para la seleccion de sala
-            String[] opcionesSalas = {"Sala A", "Sala B", "Sala VIP"}; 
-            int salaIdx = JOptionPane.showOptionDialog(null, "Seleccione una sala","Agregar Función",JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,null,opcionesSalas,opcionesSalas[0]);
+            // Selección de Sala 
+            String[] opcionesSalas = {"Sala A", "Sala B", "Sala VIP"};
+            int salaIdx = JOptionPane.showOptionDialog(
+                null, 
+                "Seleccione una sala para la función:",
+                "Agregar Función", 
+                JOptionPane.DEFAULT_OPTION, 
+                JOptionPane.QUESTION_MESSAGE, 
+                null, 
+                opcionesSalas, 
+                opcionesSalas[0]
+            );
+            // Si el usuario cierra la ventana (cancela)
+            if (salaIdx == JOptionPane.CLOSED_OPTION) return; 
             String salaSeleccionada = opcionesSalas[salaIdx];
             
-            // Mostramos las funciones existentes
+            // Mostrar Programación Actual
             List<Pelicula> cartelera = gestor.cargarPeliculas();
             List<Funcion> funcionesExistentes = gestor.mostrarFunciones(cartelera);
-            StringBuilder programacion = new StringBuilder("Programacion para "+ fecha + " en Salas \n");
+            StringBuilder programacion = new StringBuilder("Programación en Cartelera:\n");
             if(funcionesExistentes.isEmpty()) {
-                programacion.append("(No hay funciones)\n");
+                programacion.append(" (No hay funciones programadas)\n");
             } else {
-                for(Funcion f : funcionesExistentes){
-                    programacion.append(f.getIdPelicula()).append(" | ").append(f.getHora().substring(0,2)).append(" | ").append(f.getHora().substring(2,4)).append("\n");
+                for (Funcion f : funcionesExistentes){
+                    programacion.append("Pelicula: ").append(f.getNombrePelicula()) 
+                                .append("\nFecha: ").append(f.getFecha())
+                                .append("\nHora: ").append(f.getHora()) 
+                                .append("\nSala: ").append(f.getSala()).append("\n");
                 }
-                JOptionPane.showMessageDialog(null, programacion.toString(), "Funciones programadas", JOptionPane.INFORMATION_MESSAGE);
             }
-            while(true) {
+
+            // Creamos un ScrollPane para ver las funciones
+            JTextArea textArea = new JTextArea(programacion.toString());
+            textArea.setEditable(false);
+
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new java.awt.Dimension(500, 400));
+
+            JOptionPane.showMessageDialog(null, scrollPane, "Funciones Programadas", JOptionPane.INFORMATION_MESSAGE);
+
+            // Bucle de Entrada y Validación de Fecha/Hora
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+            
+            while (true) {
                 int accion = JOptionPane.showConfirmDialog(null, "¿Desea dar de alta una función de la película " +
-                unaPeli.getNombrePelicula() + "?", "Confirmación", JOptionPane.YES_NO_OPTION);
+                    unaPeli.getNombrePelicula() + "?", "Confirmación", JOptionPane.YES_NO_OPTION);
                 if (accion == JOptionPane.NO_OPTION || accion == -1) return;
 
-                String horaS =JOptionPane.showInputDialog("Ingrese la hora (00 - 23)");
-                String minS =JOptionPane.showInputDialog("Ingrese los minutos (00 - 59)");
-                if(minS == null)return;
-                int h , m;
+                // Entrada de Fecha
+                String fechaInput = JOptionPane.showInputDialog("Ingrese la fecha de la función (AAAA/MM/DD)", "Agregar Función");
+                if (fechaInput == null) continue; // Si cancela, vuelve a preguntar
+
+                LocalDate fechaFuncion;
                 try {
-                    h = Integer.parseInt(horaS);
-                    m = Integer.parseInt(minS);
-                    if(h < 0 || h > 23 || m < 0 || m > 59) throw new NumberFormatException();
-                    
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null, "Hora o minutos no validos");
-                    continue;
-                }
-                String horaFinal = String.format("%02d%02d", h, m);
-                // Validar intervalo entre funciones
-                gestor.validarIntervaloEntreFunciones(salaSeleccionada, fecha, horaFinal, unaPeli);
-                if(!gestor.validarIntervaloEntreFunciones(salaSeleccionada, fecha, horaFinal, unaPeli)){
-                    JOptionPane.showMessageDialog(null, "Existe otra funcion programada a menos de 30min para esta sala");
+                    fechaFuncion = LocalDate.parse(fechaInput.trim(), dateFormatter);
+                } catch (DateTimeParseException dtpe) {
+                    JOptionPane.showMessageDialog(null, "Formato de fecha inválido. Use AAAA/MM/DD.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
                     continue;
                 }
 
-                // Generar ID y guardar la función
-                Funcion nuevaFuncion = new Funcion(fecha, horaFinal, salaSeleccionada, unaPeli);
-                String idFuncion = nuevaFuncion.getIdPelicula() + "|" + fecha.replace("/", "")+ "|" + horaFinal + "|" + salaSeleccionada;
+                // Entrada y Validación de Hora/Minutos 
+                String horaStr = JOptionPane.showInputDialog("Ingrese la hora (00 - 23)");
+                if (horaStr == null) continue;
+                String minStr = JOptionPane.showInputDialog("Ingrese los minutos (00 - 59)");
+                if (minStr == null) continue;
+                
+                int h, m;
+                LocalTime horaFuncion;
+                try {
+                    h = Integer.parseInt(horaStr);
+                    m = Integer.parseInt(minStr);
+                    if (h < 0 || h > 23 || m < 0 || m > 59) {
+                        throw new NumberFormatException();
+                    }
+                    horaFuncion = LocalTime.of(h, m);
+                    
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(null, "Hora o minutos no válidos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    continue;
+                }
+
+                // Validación de Tiempo Pasado 
+                LocalDate hoy = LocalDate.now();
+                LocalTime horaActual = LocalTime.now();
+
+                // Valida si la fecha es pasada O si es HOY y la hora ya pasó.
+                if (fechaFuncion.isBefore(hoy) || (fechaFuncion.isEqual(hoy) && horaFuncion.isBefore(horaActual))) {
+                    JOptionPane.showMessageDialog(
+                        null, 
+                        "La función no puede ser en el pasado. La hora debe ser futura si la fecha es hoy.", 
+                        "Error de Tiempo Pasado", 
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    continue;
+                }
+
+                // Validamos el intervalo
+                String fechaFinal = fechaFuncion.toString().replace('-', '/');
+                String horaFinal = String.format("%02d%02d", h, m);
+
+                if (!gestor.validarIntervaloEntreFunciones(salaSeleccionada, fechaFinal, horaFinal, unaPeli)) {
+                    JOptionPane.showMessageDialog(null, "Existe otra función programada a menos de 30 minutos para esta sala. Cambia la hora o la sala.");
+                    continue;
+                }
+
+                Funcion nuevaFuncion = new Funcion(fechaFinal, horaFinal, salaSeleccionada, unaPeli); 
+                
+                // Generamos un ID descriptivo
+                String idFuncion = nuevaFuncion.getNombrePelicula().replace(" ", "") + "|" + fechaFinal.replace("/", "") + "|" + horaFinal + "|" + salaSeleccionada.replace(" ", "");
                 
                 gestor.guardarFuncionesEnArchivo(nuevaFuncion);
-                JOptionPane.showMessageDialog(null, "Funcion registrada con el siguiente ID:\n" + idFuncion);
-                break;
+                JOptionPane.showMessageDialog(null, "Función registrada con el siguiente ID:\n" + idFuncion);
+                break; 
             }
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error al procesar "+ e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al procesar: " + e.getMessage(), "Error de E/S", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     //Función para mostrar el menu del administrador
-    public static void menuAdmin(GestorDeArchivos gestor, Validaciones v) throws IOException {
+    public static void menuAdmin(GestorDeArchivos gestor, Validaciones v, Administrador admin) throws IOException {
         List<Administrador> administradores = gestor.cargarAdmin();
         do {
             String[] opciones = {"Agregar Película a cartelera", "Agregar Función", "Registrar Empleado", "Ver boletos comprados de un cliente", "Cerrar sesión"};
-            int opcion = JOptionPane.showOptionDialog(null,"Bienvenido al sistema de Administradores de CinePOOlis",
-            "Administradores", JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
+            int opcion = JOptionPane.showOptionDialog(null, "Bienvenido/a, " + admin.getNombre() + 
+            "!\n\n¿Qué acción desea realizar?", "Administradores de CinePOOlis",
+            JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null, opciones, opciones[0]);
         
             switch (opcion) {
                 case 0 -> agregarPeliculaACartelera(gestor);

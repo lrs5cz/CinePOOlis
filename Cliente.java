@@ -50,7 +50,6 @@ public class Cliente extends Persona {
                 // Recargamos archivos en cada iteración por si han sido modificados
                 clientes = gestor.cargarClientes(); 
                 cartelera = gestor.cargarPeliculas();
-                // Esta línea puede ser el origen del IndexOutOfBounds si no hay funciones.
                 // Asegúrate de que gestor.mostrarFunciones maneje listas vacías.
                 funciones = gestor.mostrarFunciones(cartelera); 
                 boletos = gestor.cargarBoletosEnArchivo(cartelera);
@@ -59,8 +58,8 @@ public class Cliente extends Persona {
                 // Mostrar diálogo
                 opcion = JOptionPane.showOptionDialog(
                     null, 
-                    "Menú del cliente. Bienvenido/a, " + cliente.getNicknameCuenta() + "\n\n¿Qué acción desea realizar?", 
-                    "CinePOOlis",
+                    "Bienvenido/a, " + cliente.getNombre() + "!\n\n¿Qué acción desea realizar?", 
+                    "Clientes de CinePOOlis",
                     JOptionPane.PLAIN_MESSAGE,
                     JOptionPane.INFORMATION_MESSAGE, 
                     null, 
@@ -217,14 +216,16 @@ public class Cliente extends Persona {
             return null;
         }
 
+        int i = 1;
+
         StringBuilder funcionesStr = new StringBuilder("Cartelera de Películas:\n\n");
-        for (int i = 0; i < funciones.size(); i++) {
-            Funcion f = funciones.get(i);
-            funcionesStr.append((i + 1)).append(". ").append(f.getNombrePelicula()).append("\n")
+        for (Funcion f : funciones) {
+            funcionesStr.append((i)).append(". ").append(f.getNombrePelicula()).append("\n")
                 .append("ID película: ").append(f.getIdPelicula()).append("\n")
                 .append("Fecha: ").append(f.getFecha()).append("\n")
                 .append("Hora: ").append(f.getHora()).append("\n")
                 .append("Sala: ").append(f.getSala()).append("\n\n");
+                i++;
         }
 
         // Creamos un JScrollPane para mostrar las funciones seleccionables
@@ -274,7 +275,7 @@ public class Cliente extends Persona {
         }
 
         // Mostrar el mapa de asientos
-        verAsientos(asientos, gestor);
+        verAsientos(asientos, gestor, funcion);
         
         int asientosASeleccionar = 0;
         boolean cantidadValida = false;
@@ -491,7 +492,7 @@ public class Cliente extends Persona {
 
     // Método auxiliar para ver asientos según la sala
     
-    public static void verAsientos(String[][] asientos, GestorDeArchivos gestor) {
+    public static void verAsientos(String[][] asientos, GestorDeArchivos gestor, Funcion funcion) {
 
         StringBuilder asientosStr = new StringBuilder();
 
@@ -499,25 +500,59 @@ public class Cliente extends Persona {
         if (asientos == null || asientos.length == 0) {
             asientosStr.append("No hay datos de asientos disponibles.");
         } else {
-            // Asignamos un valor a las columnas
-            int numColumnas = asientos[0].length;
-            asientosStr.append("   "); // Espacio para la letra de fila
-            for (int j = 0; j < numColumnas; j++) {
-                // Formato de impresión estandarizada para las columnas
-                asientosStr.append(String.format(" %-4s", j + 1)); 
-            }
-            asientosStr.append("\n"); 
+            // Hacemos un switch para imprimir los índices correctos de la sala
+            switch (funcion.getSala().toUpperCase()) {
+                case "A", "SALA A", "B", "SALA B" -> {
+                    // Asignamos un valor a las columnas
+                    int numColumnas = asientos[0].length;
+                    asientosStr.append("      "); // Espacio para la letra de fila
+                    for (int j = 0; j < numColumnas; j++) {
+                        // Formato de impresión estandarizada para las columnas
+                        asientosStr.append(String.format(" %-4s", j + 1)); 
+                    }
+                    asientosStr.append("\n"); 
 
-            for (int i = 0; i < asientos.length; i++) {
-                // Añadir la letra de la fila 
-                String letraFila = gestor.obtenerLetraFila(i); 
-                asientosStr.append(letraFila).append("   ");
-                
-                for (String asiento : asientos[i]) {
-                    // Formato de impresión estandarizada para el asiento
-                    asientosStr.append(String.format(" %-4s", asiento));
+                    for (int i = 0; i < asientos.length; i++) {
+                        // Añadir la letra de la fila 
+                        String letraFila = gestor.obtenerLetraFila(i); 
+                        asientosStr.append(letraFila).append("      ");
+                        
+                        for (String asiento : asientos[i]) {
+                            // Formato de impresión estandarizada para el asiento
+                            asientosStr.append(String.format(" %-4s", asiento));
+                        }
+                        asientosStr.append("\n"); 
+                    }
                 }
-                asientosStr.append("\n"); 
+                case "VIP", "SALA VIP" -> {
+                    asientosStr.append("      "); // Espacio para la letra de fila
+                    int numAsiento = 0;
+                    
+                    for (int j = 0; j < asientos[0].length; j++) {
+                        // Pasillos verticales
+                        if (j == 2 || j == 5) {
+                            asientosStr.append("      "); 
+                        } else {
+                            numAsiento++;
+                            // Imprimimos el número de asiento
+                            asientosStr.append(String.format(" %-4s", numAsiento)); 
+                        }
+                    }
+                    asientosStr.append("\n"); 
+
+                    // Imprimir el cuerpo de la matriz (mismo código que A y B)
+                    for (int i = 0; i < asientos.length; i++) {
+                        // Añadir la letra de la fila 
+                        String letraFila = gestor.obtenerLetraFila(i); 
+                        asientosStr.append(letraFila).append("\t");
+                        
+                        for (String asiento : asientos[i]) {
+                            // Formato de impresión estandarizada para el asiento
+                            asientosStr.append(String.format(" %-4s", asiento));
+                        }
+                        asientosStr.append("\n"); 
+                    }
+                } 
             }
         }
 

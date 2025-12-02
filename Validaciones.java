@@ -61,7 +61,7 @@ public class Validaciones {
     // Nickname
     public boolean existeNicknameCliente(List<Cliente> clientes, String nickname) {
         for (Cliente c : clientes) {
-            if (c.getNicknameCuenta().equals(nickname)) {
+            if (c.getNicknameCuenta().toUpperCase().equals(nickname.toUpperCase())) {
                 return true;
             }
         }
@@ -70,7 +70,7 @@ public class Validaciones {
 
     public boolean existeNicknameAdmin(List<Administrador> administradores, String nickname) {
         for (Administrador a : administradores) {
-            if (a.getNicknameCuenta().equals(nickname)) {
+            if (a.getNicknameCuenta().toUpperCase().equals(nickname.toUpperCase())) {
                 return true;
             }
         }
@@ -79,7 +79,7 @@ public class Validaciones {
 
     public boolean existeNicknameVendedor(List<Vendedor> vendedores, String nickname) {
         for (Vendedor v : vendedores) {
-            if (v.getNicknameCuenta().equals(nickname)) {
+            if (v.getNicknameCuenta().toUpperCase().equals(nickname.toUpperCase())) {
                 return true;
             }
         }

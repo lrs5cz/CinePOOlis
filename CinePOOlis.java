@@ -90,6 +90,8 @@ public class CinePOOlis {
                 }
             }
 
+            nickname = nickname.toUpperCase();
+
             boolean correoValido = false;
             while(!correoValido) {
                 try {
@@ -174,6 +176,8 @@ public class CinePOOlis {
                 // Manejar cancelación
                 if (nicknameIngresado == null) return; 
 
+                nicknameIngresado = nicknameIngresado.toUpperCase();
+
                 String passwordIngresado = JOptionPane.showInputDialog(null, "Ingrese su contraseña",
                 "Inicio de sesión", JOptionPane.INFORMATION_MESSAGE);
                 
@@ -208,7 +212,8 @@ public class CinePOOlis {
                 Cliente cliente = (Cliente) usuario;
                 Cliente.menuCliente(gestor, cliente);
             } else if (usuario instanceof Administrador) {
-                Administrador.menuAdmin(gestor, v); 
+                Administrador admin = (Administrador) usuario;
+                Administrador.menuAdmin(gestor, v, admin); 
             } else if (usuario instanceof Vendedor) {
                 Vendedor vendedor = (Vendedor) usuario;
                 // Vendedor.menuVendedor(parámetros); 

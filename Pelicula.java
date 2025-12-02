@@ -5,13 +5,22 @@ import java.util.List;
 public class Pelicula {
     private String nombrePelicula, genero, sinopsis, duracion, idPelicula;
 
-    // Constructor
+    // Constructor para crear películas
     public Pelicula(String nombrePelicula, String genero, String sinopsis, String duracion) {
         this.nombrePelicula = nombrePelicula;
         this.genero = genero;
         this.sinopsis = sinopsis;
         this.duracion = duracion;
         this.idPelicula = generarIdPelicula();
+    }
+
+    // Constructor para cargar películas desde un archivo
+    public Pelicula(String nombrePelicula, String genero, String sinopsis, String duracion, String idPelicula) {
+        this.nombrePelicula = nombrePelicula;
+        this.genero = genero;
+        this.sinopsis = sinopsis;
+        this.duracion = duracion;
+        this.idPelicula = idPelicula;
     }
 
     // Getters y Setters
@@ -60,7 +69,7 @@ public class Pelicula {
     public boolean unicoIdPelicula(List<Pelicula> cartelera, String id) {
         Pelicula pelicula = null;
         for (Pelicula p : cartelera) {
-            if (p.getIdPelicula().equals(id.toUpperCase())) {
+            if (p.getIdPelicula().equals(id.toUpperCase()) && !(p.getNombrePelicula().equals(nombrePelicula))) {
                 pelicula = p;
                 break;
             }

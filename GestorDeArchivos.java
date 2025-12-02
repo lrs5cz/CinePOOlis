@@ -5,9 +5,11 @@ import javax.swing.JOptionPane;
 public class GestorDeArchivos {
 
     // Se crea el archivo de peliculas
-    private final File CLIENTES_REGISTRADOS = new File("clientesRegistrados.dat"); 
-    private final File ADMIN_REGISTRADOS = new File("adminRegistrados.dat");
-    private final File VENDEDORES_REGISTRADOS = new File("vendedoresRegistrados.dat");
+    private final String CARPETA_USUARIOS = "archivosUsuarios/";
+    private final String CARPETA_SALAS_FUNCION = "archivosSalaFuncion/";
+    private final File CLIENTES_REGISTRADOS = new File(CARPETA_USUARIOS + "clientesRegistrados.dat"); 
+    private final File ADMIN_REGISTRADOS = new File(CARPETA_USUARIOS + "adminRegistrados.dat");
+    private final File VENDEDORES_REGISTRADOS = new File(CARPETA_USUARIOS + "vendedoresRegistrados.dat");
     private final File ARCHIVO_PELICULAS = new File("peliculasAgregadas.txt");
     private final File ARCHIVO_FUNCIONES = new File("funcionesAgregadas.txt");
     private final File BOLETOS_COMPRADOS = new File("boletosComprados.txt");
@@ -189,8 +191,8 @@ public class GestorDeArchivos {
         String linea;
         while((linea = objetoReader.readLine()) != null){
             String[] partes = linea.split("\\|");
-            if(partes.length == 4){
-                Pelicula peliculaLeida = new Pelicula(partes[0],partes[1],partes[2],partes[3]);
+            if(partes.length == 5) {
+                Pelicula peliculaLeida = new Pelicula(partes[0], partes[1], partes[2], partes[3], partes[4]);
                 listaDePeliculasDelArchivo.add(peliculaLeida);
             }
         }
@@ -448,7 +450,7 @@ public class GestorDeArchivos {
     }
 
     public void guardarAsientos(Funcion funcion, String[][] asientos) throws IOException {
-        String rutaArchivo = generarNombreArchivo(funcion);
+        String rutaArchivo = CARPETA_SALAS_FUNCION + generarNombreArchivo(funcion);
 
         if (asientos == null) {
             throw new IllegalArgumentException("El mapa de asientos de la función no puede ser nulo al guardar.");
@@ -473,7 +475,7 @@ public class GestorDeArchivos {
     }
 
     public String[][] cargarAsientos(Funcion funcion) {
-        String rutaArchivo = generarNombreArchivo(funcion);
+        String rutaArchivo = CARPETA_SALAS_FUNCION + generarNombreArchivo(funcion);
         File archivo = new File(rutaArchivo);
         
         if (!archivo.exists()) {
@@ -489,7 +491,6 @@ public class GestorDeArchivos {
             try {
                 // Guardamos la matriz inicial en el nuevo archivo
                 guardarAsientos(funcion, asientosIniciales); 
-                System.out.println("Archivo de asientos inicial creado con éxito en: " + rutaArchivo);
                 return asientosIniciales; // Devolvemos el mapa inicial creado
             } catch (IOException e) {
                 return null; // Error grave de escritura
@@ -555,22 +556,33 @@ public class GestorDeArchivos {
 
     public String[][] obtenerAsientosB() {
         String[][] asientosB = new String[10][15];
-        for (int i = 0; i < asientosB.length; i++) {
+        
+        for (int i = 0; i < asientosB.length; i++) { 
             String fila = obtenerLetraFila(i);
-
+            
+            // Las primeras 4 filas tienen solo 7 asientos centrados
+            boolean esFilaCortaCentrada = (i >= 0 && i <= 3); 
+            
+            // Usamos un contador separado para el número de asiento
+            int numAsientoEnFila = 0; 
+            
             for (int j = 0; j < asientosB[i].length; j++) {
-
-                boolean esFilaPasillo = (i >= 0 && i <= 3); 
                 
-                boolean esPasilloIzquierdo = (j >= 0 && j <= 3); 
-                
-                boolean esPasilloDerecho = (j >= 11 && j <= 14); 
-
-                if (esFilaPasillo && (esPasilloIzquierdo || esPasilloDerecho)) {
-                    asientosB[i][j] = "    "; 
+                if (esFilaCortaCentrada) {
+                    boolean esPasilloInicial = (j >= 0 && j <= 3);
+                    
+                    boolean esPasilloFinal = (j >= 11 && j <= 14);
+                    
+                    if (esPasilloInicial || esPasilloFinal) {
+                        // Colocamos pasillo
+                        asientosB[i][j] = "    "; 
+                    } else {
+                        numAsientoEnFila++;
+                        asientosB[i][j] = fila + numAsientoEnFila + "[O]"; 
+                    }
                 } else {
-                    int columna = j + 1;
-                    asientosB[i][j] = fila + columna + "[O]"; // O representa un asiento disponible
+                    numAsientoEnFila++;
+                    asientosB[i][j] = fila + numAsientoEnFila + "[O]"; 
                 }
             }
         }
@@ -578,17 +590,21 @@ public class GestorDeArchivos {
     }
 
     public String[][] obtenerAsientosVIP() {
-        String[][] asientosVIP = new String[8][10];
-        for (int i = 0; i < asientosVIP.length; i++) {
+        String[][] asientosVIP = new String[8][8]; 
+        int indiceAsiento = 0; 
+        
+        for (int i = 0; i < asientosVIP.length; i++) { 
             String fila = obtenerLetraFila(i);
-            for (int j = 0; j < asientosVIP[i].length; j++) {
-                boolean esFilaIzqPasillo = (i >= 2 && i <= 3); 
-                boolean esFilaDerPasillo = (i >= 6 && i <= 7); 
-                if (esFilaIzqPasillo || esFilaDerPasillo) {
-                asientosVIP[i][j] = "    ";
+            indiceAsiento = 0; // Reiniciar el contador de asientos para cada fila
+            
+            for (int j = 0; j < asientosVIP[i].length; j++) { 
+                
+                // Pasillos verticales
+                if (j == 2 || j == 5) {
+                    asientosVIP[i][j] = "    "; // Marcador de Pasillo
                 } else {
-                    int columna = j + 1;
-                    asientosVIP[i][j] = fila + columna + "[O]"; // O representa un asiento disponible
+                    indiceAsiento++;
+                    asientosVIP[i][j] = fila + indiceAsiento + "[O]"; // Asiento disponible
                 }
             }
         }

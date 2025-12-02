@@ -5,11 +5,11 @@ public class Boleto extends Funcion {
     private String nicknameComprador;
 
     // Constructor
-    public Boleto(String fecha, String hora, String sala, Pelicula pelicula, String asiento) {
+    public Boleto(String fecha, String hora, String sala, Pelicula pelicula, String asiento, String nicknameComprador) {
         super(fecha, hora, sala, pelicula);
         this.asiento = asiento;
-        this.nicknameComprador= nicknameComprador;
-        if ((sala.toLowerCase()).equals("sala vip")) {
+        this.nicknameComprador = nicknameComprador;
+        if (sala.toUpperCase().equals("SALA VIP") || sala.toUpperCase().equals("VIP") ) {
             this.precio = 190;
         } else { // Salas A y B
             this.precio = 90;
@@ -46,5 +46,4 @@ public class Boleto extends Funcion {
     }
 
 }
-
 
