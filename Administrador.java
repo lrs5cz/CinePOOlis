@@ -224,7 +224,7 @@ public class Administrador extends Empleado {
                 case 0 -> agregarPeliculaACartelera(gestor);
                 case 1 -> agregarFuncion(gestor);
                 case 2 -> registroEmpleado(gestor, v, administradores);
-                // case 3 -> 
+                case 3 -> verBoletosComprados(gestor, v);
                 default -> {
                     JOptionPane.showMessageDialog(null, "Cerrando sesión...");
                     return;
@@ -402,4 +402,120 @@ public class Administrador extends Empleado {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    public static void verBoletosComprados(GestorDeArchivos gestor,Validaciones v){
+        try{
+            List<Cliente> todosClientes = gestor.cargarClientes();
+            List<Pelicula> cartelera = gestor.cargarPeliculas();
+            List<Boleto>todosBoletos = todosBoletos = gestor.cargarBoletosEnArchivo(cartelera);
+            //
+            if(todosClientes.isEmpty() || todosBoletos.isEmpty()){
+                JOptionPane.showMessageDialog(null, "No hay clientes registrados, o no se han comprado boletos aun");
+                return;
+            }
+            //Hacemos la busqueda del nickname
+            String busqueda = JOptionPane.showInputDialog("Ingrese el nickname(compelto o partde de el) del cliente");
+            if(busqueda == null || busqueda.trim().isEmpty()){
+                return;
+            }
+
+            String busquedaLC = busqueda.toLowerCase().trim();
+            // Encontrar clientes coincidentes
+            List<Cliente> clientesCoincidentes = new ArrayList<>();
+            //usamos un hasMap que es como una HashTable pero esta si acepta valores nulos por si aun no ha comprado boletos
+            Map<String, Integer> conteoBoletosporNickanme = new HashMap<>();
+
+            for(Cliente cliente: todosClientes){
+                String nicknameCliente = cliente.getNicknameCuenta();
+                if(nicknameCliente.toLowerCase().contains((busquedaLC))){
+                    //Los clientes que coincide en parte
+                    clientesCoincidentes.add(cliente);
+                    //Contamos los boletos comprados por ese nickname coincidente
+                    int boletosComprados = 0;
+                    for(Boleto boleto: todosBoletos){
+                        if(boleto.getNicknameComprador().equals(nicknameCliente)){
+                            boletosComprados++;
+                        }
+                    }
+                    conteoBoletosporNickanme.put(nicknameCliente,boletosComprados);
+                }
+            }
+            if(clientesCoincidentes.isEmpty()){
+                JOptionPane.showMessageDialog(null, "No se encontraron clientes con el nickname ingresado");
+                return;
+            }
+            //Mostramos la lista de los clientes que coindiden y el numero de boletos
+            //Hacemos un stringbuilder para poder agregar mas facil los clientes e imprimirlos mas facil
+            StringBuilder listaOp = new StringBuilder("Clientes encontrados:\n");
+            for(int i = 0; i < clientesCoincidentes.size(); i++){
+                Cliente c = clientesCoincidentes.get(i);
+                //usamos getOrDefault para obtener el valor asociado a una clave del mapa(Cantidad de boletos)
+                int cantidad = conteoBoletosporNickanme.getOrDefault(c.getNicknameCuenta(), 0);
+                listaOp.append((i + 1)).append(". Nickname: ").append(c.getNicknameCuenta()).append(" |Boletos Comprados: ").append(cantidad).append("\n");
+            }
+            String seleccionS = JOptionPane.showInputDialog(listaOp.toString() + "\nIngrese el numero del cliente para ver la informacion del boleto");
+            if(seleccionS == null) return;
+            int indiceSeleccionado;
+            try{
+                indiceSeleccionado = Integer.parseInt(seleccionS) - 1;
+            }catch(NumberFormatException e){
+                JOptionPane.showMessageDialog(null, "Seleccion invalida");
+                return;
+            }
+            if(indiceSeleccionado < 0 || indiceSeleccionado >= clientesCoincidentes.size()){
+                JOptionPane.showMessageDialog(null, "Seleccion invalida, numero fuera de rango");
+                return;
+            }
+            Cliente clienteSeleccionado = clientesCoincidentes.get(indiceSeleccionado);
+            String nicknameObjetivo = clienteSeleccionado.getNicknameCuenta();
+            //Despues de encontrar el nickname mostramos la información
+            StringBuilder detalles = new StringBuilder(); 
+            detalles.append("===Detalles de la compra===");
+            detalles.append("----------------------------------------------------");
+            detalles.append("Nickname del comprador: ").append(nicknameObjetivo).append(("\n"));
+            detalles.append("Nombre del usuario: ").append(clienteSeleccionado.getNombre()).append(" ").append(clienteSeleccionado.getApellidoP()).append(" ").append(clienteSeleccionado.getApellidoM()).append("\n");
+            detalles.append("----------------------------------------------------");
+            //Agrupamos boletos
+            Map<String, List<Boleto>> boletosPorFunción = new HashMap<>();
+            for(Boleto boleto : todosBoletos){
+                if(boleto.getNicknameComprador().equals(nicknameObjetivo)){
+                    //Generamos la clave
+                    String claveFuncion = boleto.getIdPelicula() + "|" + boleto.getFecha() + "|" + boleto.getHora() + "|" + boleto.getSala();
+                    boletosPorFunción.computeIfAbsent(claveFuncion, k -> new ArrayList<>()).add(boleto);
+                }
+            }
+            
+            if(boletosPorFunción.isEmpty()){
+                detalles.append("El cliente no ha comprado boletos.");
+            }else {
+                //.Entry para acceder a la clave y al valor 
+                for(Map.Entry<String, List<Boleto>> entry : boletosPorFunción.entrySet()){
+                    List<Boleto> boletosFunción = entry.getValue();
+                    if(boletosFunción.isEmpty()) continue;
+                    Boleto primerBoleto = boletosFunción.get(0);
+                    //Informacion peli
+                    detalles.append("\nPelicua: ").append(primerBoleto.getNombrePelicula()).append("\n");
+                    detalles.append("Funcion: ").append(primerBoleto.toString());
+                    detalles.append("Boletos comprados: ").append(boletosFunción.size()).append("\n");
+                    //Mostramos los asientos
+                    detalles.append("Asientos: ");
+                    for(int i = 0; i< boletosFunción.size();i++){
+                        detalles.append(boletosFunción.get(i).getAsiento());
+                        if(i<boletosFunción.size() - 1){
+                            detalles.append(",");
+                        }
+
+                    }
+                    detalles.append("\n");
+                }
+
+            }
+            JOptionPane.showMessageDialog(null, detalles.toString(),"Historial de Boletos: ",JOptionPane.INFORMATION_MESSAGE);
+        }catch(IOException e){
+            JOptionPane.showMessageDialog(null, "Erro al cargar los datos: "+e.getMessage(),"Error de archivo",JOptionPane.ERROR_MESSAGE);
+        }catch(Exception e){
+            JOptionPane.showMessageDialog(null, "Se genero un error inerperado"+e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 }
+
